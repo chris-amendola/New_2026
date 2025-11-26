@@ -1,0 +1,137 @@
+1                                                                The SAS System                                     21:18 Saturday, April 3, 2021
+
+NOTE: SGIO processing active for file SASUSER.PROFBAK.CATALOG.
+NOTE: Copyright (c) 2016 by SAS Institute Inc., Cary, NC, USA. 
+NOTE: SAS (r) Proprietary Software 9.4 (TS1M6) 
+      Licensed to OPTUM - IHCIS - PROD - BOSP7SASAPP01, Site 70054037.
+NOTE: This session is executing on the X64_SRV16  platform.
+
+
+
+NOTE: Additional host information:
+
+ X64_SRV16 WIN 10.0.14393  Server
+
+NOTE: SAS initialization used:
+      real time           0.38 seconds
+      cpu time            0.34 seconds
+      
+1          %let src_contract=PLAN_SOURCE;
+2          
+3          libname _src_ '\\apswp2287\J\Data_Warehouse\Reliant\PD20210228\base'  ;
+NOTE: Libref _SRC_ was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: \\apswp2287\J\Data_Warehouse\Reliant\PD20210228\base
+4          libname temp 'W:\camendol\SPC\sas_test_data';
+NOTE: Libref TEMP was successfully assigned as follows: 
+      Engine:        V9 
+      Physical Name: W:\camendol\SPC\sas_test_data
+5          
+6          data temp.project_spans_months( keep=&src_contract.
+7                                               member
+8                                               eff_dt
+9          									 end_dt
+10                                           drop=span_beg_dt
+11                                               span_end_dt
+12                                               effective_date
+13                                               term_date);
+14             set _src_.rmg_cur_elgcms_span(rename=( eff_dt=effective_date
+15         	                               end_dt=term_date));
+NOTE: SGIO processing active for file _SRC_.RMG_CUR_ELGCMS_SPAN.DATA.
+16         
+17             format eff_dt
+18                    end_dt
+19                    span_beg_dt
+20                    span_end_dt yymmdd10.;
+21         
+22             rank_mem=_n_;
+23         
+24             span_beg_dt=intnx('month',effective_date,0,'s');
+25             span_end_dt=intnx('month',term_date,0,'s');
+26             /*Maybe limit span end date to current date?*/
+27             if span_end_dt >today() then span_end_dt=intnx('month',today(),0,'s');
+28             z=today();
+29         	format z yymmdd10.;
+30         	put z;
+31             eff_dt=span_beg_dt;
+32             end_dt=intnx('month',eff_dt,0,'e');
+33             output;
+34         
+35             do while (END_DT < span_end_dt);
+36         
+37                    EFF_DT=intnx('month',EFF_DT,1,'s');
+38                    END_DT=intnx('month',END_DT,0,'e');
+39                    output;
+40         
+41                  end;
+42         run;
+
+NOTE: SGIO processing active for file TEMP.PROJECT_SPANS_MONTHS.DATA.
+NOTE: SGIO processing active for file TEMP.PROJECT_SPANS_MONTHS.DATA.
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2                                                                The SAS System                                     21:18 Saturday, April 3, 2021
+
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+2021-04-03
+NOTE: Invalid argument to function INTNX('month',6589275,1,'s') at line 37 column 19.
+NOTE: Missing values were generated as a result of performing an operation on missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      5453161 at 37:19   
+NOTE: Mathematical operations could not be performed at the following places. The results of the operations have been set to missing values.
+      Each place is given by: (Number of times) at (Line):(Column).
+      1 at 37:19   
+ERROR: User asked for termination
+NOTE: The SAS System stopped processing this step because of errors.
+NOTE: Due to ERROR(s) above, SAS set option OBS=0, enabling syntax check mode. 
+      This prevents execution of subsequent data modification statements.
+NOTE: There were 38 observations read from the data set _SRC_.RMG_CUR_ELGCMS_SPAN.
+WARNING: The data set TEMP.PROJECT_SPANS_MONTHS may be incomplete.  When this step was stopped there were 5669028 observations and 4 variables.
+NOTE: Compressing data set TEMP.PROJECT_SPANS_MONTHS decreased size by 32.84 percent. 
+      Compressed is 7465 pages; un-compressed would require 11116 pages.
+WARNING: Data set TEMP.PROJECT_SPANS_MONTHS was not replaced because this step was stopped.
+NOTE: DATA statement used (Total process time):
+      real time           11.79 seconds
+      cpu time            4.42 seconds
+      
+ERROR: Errors printed on page 2.
+
+NOTE: SAS Institute Inc., SAS Campus Drive, Cary, NC USA 27513-2414
+NOTE: The SAS System used:
+      real time           12.22 seconds
+      cpu time            4.76 seconds
+      

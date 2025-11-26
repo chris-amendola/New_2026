@@ -1,0 +1,76 @@
+cd \\tsclient\H\Data_Quality_Profile
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDCMS% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MED_BH% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDFHA% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDFHM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDFHP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDFHM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDHPH% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDNXG% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDTMP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDTHP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDXM1% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDXM2% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_CUR_MEDXMA% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmCMS% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phm_BH% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmFHA% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmFHM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmFHP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmFHM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmHPH% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmNXG% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmTMP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmTHP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmXM1% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmXM2% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_phmXMA% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgCMS_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elg_BH_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgFHA_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgFHM_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgFHP_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgFHM_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgHPH_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgNXG_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgTMP_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgTHP_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_Dataops_Volume.py --client_name Reliant --cycle 20210131 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive J --dataset RMG_cur_elgXMA_span --by_var_list PLAN_SOURCE --span_table True
+

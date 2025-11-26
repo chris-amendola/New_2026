@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[24]:
+
+
+import pandas as pd
+import os
+from pathlib import Path,PurePath
+import re
+import xlwt
+import numpy as np
+import sqlite3
+
+
+# In[25]:
+
+
+pd.set_option("display.max.columns", None)
+pd.set_option("display.precision", 2)
+pd.set_option('display.max_columns', 150)
+
+
+# In[26]:
+
+
+stem_dir='\\\\nasgw8315pn\\Prod\\'
+app_dir="\\trunk\\SASApps\\Ihcis_wh\\"
+
+
+# In[27]:
+
+
+get_ipython().run_cell_magic('time', '', '#Get user workspaces SAS files\nsas_lists=[]\ncols=[\'module\',\'location\',\'application\']\n\nprint("Scan dir: "+stem_dir+app_dir+\'...\')\nsearch_paths=list(Path(stem_dir+app_dir).rglob("*.[sS][aA][sS]"))\nfor sas_file in search_paths:\n    #print(sas_file)\n    name=sas_file.name\n    path=os.path.dirname(os.path.relpath(sas_file,stem_dir+app_dir))\n    sas_lists.append([name,path,app_dir])  \n    work_space_sas = pd.DataFrame(sas_lists, columns=cols)\nprint(\'...DONE.\')    ')
+
+
+# In[28]:
+
+
+print('Sample of Modules by "client" from: ')
+print(stem_dir+app_dir)
+work_space_sas.loc[work_space_sas['module']=='clm_m.sas',('module','location')].head()
+
+
+# In[34]:
+
+
+excel_book="\\\\apswp2286\\w\\camendol\\"+"production_client_sas_modules.xlsx"
+clm_m_files=work_space_sas.loc[work_space_sas['module']=='clm_m.sas',('module','location')]
+with pd.ExcelWriter(excel_book) as writer:
+        pd.DataFrame(clm_m_files)        .to_excel(writer, sheet_name='Module_List')
+
+
+# In[82]:
+
+
+#Scan identified SAS files for a 'phrase'
+for index, row in clm_m_files.iterrows():
+    #print(stem_dir+app_dir,row['location'],'\\',row['module'])
+    rel_path=str(Path(stem_dir+app_dir,row['location']+'\\'+row['module']))
+    #print(rel_path)
+    with open(rel_path) as infile:     
+        data= infile.read()                    .replace('\n', '')                    .replace('*/',';')                    .split(';')
+        linect=len(data)
+        for linenum in range(1,linect):
+            if (re.search("if revtype='REV' * then do", data[linenum])):
+                print('\n',rel_path)
+                print(linenum,data[linenum])
+            if (re.search("if 100 le input\(revenue,15.\) le 219", data[linenum])):
+                print(linenum,data[linenum])    
+
+

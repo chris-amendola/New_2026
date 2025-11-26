@@ -1,0 +1,317 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>PivotTable.js</title>
+
+        <!-- external libs from cdnjs -->
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.css">
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.11/c3.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/0.71/jquery.csv-0.71.min.js"></script>
+
+
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.19.0/pivot.min.css">
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.19.0/pivot.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.19.0/d3_renderers.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.19.0/c3_renderers.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pivottable/2.19.0/export_renderers.min.js"></script>
+
+        <style>
+            body {font-family: Verdana;}
+            .node {
+              border: solid 1px white;
+              font: 10px sans-serif;
+              line-height: 12px;
+              overflow: hidden;
+              position: absolute;
+              text-indent: 2px;
+            }
+            .c3-line, .c3-focused {stroke-width: 3px !important;}
+            .c3-bar {stroke: white !important; stroke-width: 1;}
+            .c3 text { font-size: 12px; color: grey;}
+            .tick line {stroke: white;}
+            .c3-axis path {stroke: grey;}
+            .c3-circle { opacity: 1 !important; }
+            .c3-xgrid-focus {visibility: hidden !important;}
+        </style>
+    </head>
+    <body>
+        <script type="text/javascript">
+            $(function(){
+                if(window.location != window.parent.location)
+                    $("<a>", {target:"_blank", href:""})
+                        .text("[pop out]").prependTo($("body"));
+
+                $("#output").pivotUI(
+                    $.csv.toArrays($("#output").text()),
+                    $.extend({
+                        renderers: $.extend(
+                            $.pivotUtilities.renderers,
+                            $.pivotUtilities.c3_renderers,
+                            $.pivotUtilities.d3_renderers,
+                            $.pivotUtilities.export_renderers
+                            ),
+                        hiddenAttributes: [""]
+                    }, {"rows": ["Created_yr"], "cols": ["Created_yr_mon"], "rendererName": "Bar Chart"})
+                ).show();
+             });
+        </script>
+        <div id="output" style="display: none;">,Formatted ID,Created,Updated,Created_yr_mon,Created_yr,Updated_Seg,Updated_WKs,Duration_Seg,Duration,Name,Impact Kanban State,Owner
+549,US506226,2019-01-02 06:24:00,2019-11-05 05:28:00,2019-01-01 00:00:00,2019-01-01 00:00:00,360,27+,330,306.9611111111111,Vera - Blue KC addition,Released,Padmaja Gandhi
+550,US506411,2019-01-02 11:42:00,2019-01-22 07:24:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,19.820833333333333,Horizon: IPro Update,Released,Phanikumar Jetti
+551,US507350,2019-01-04 08:41:00,2019-05-13 07:46:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,150,128.96180555555554,AMC - error in peer_map lob,Released,Phanikumar Jetti
+552,US507358,2019-01-04 08:51:00,2019-05-14 04:35:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,150,129.82222222222222,Fullwell - Ipro 11.1 migration,Released,Pragada Kumar
+553,US510009,2019-01-11 07:40:00,2019-02-20 13:37:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,45,40.24791666666667,WESTMED: Ipro Pull ServiceMedPhm Request Diag2 Fix,Released,Sue Szubzda
+554,US510390,2019-01-14 06:41:00,2019-02-05 08:56:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,22.09375,Oxford: Diag2 Change Request,Released,Sue Szubzda
+555,US510496,2019-01-14 10:19:00,2019-02-20 13:06:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,45,37.115972222222226,Dean:  Cognizant/Trizetto Pharmacy File - remove outliers (Closed--Not Implemented),Released,Sue Szubzda
+556,US510717,2019-01-15 07:25:00,2019-05-07 02:36:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,120,111.79930555555555,Vera - OPA migration,Released,Padmaja Gandhi
+771,US512023,2019-01-18 06:59:00,2019-11-12 07:19:00,2019-01-01 00:00:00,2019-01-01 00:00:00,360,27+,300,298.0138888888889,Common: Add UC Davis as data contributor to Impact Database,UAT,Lois Nordstrom
+558,US512028,2019-01-18 07:23:00,2019-08-13 08:01:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,210,207.0263888888889,Tufts_II:  THP V7 DB Compare Member Match issues,Released,Sue Szubzda
+559,US515256,2019-01-30 07:25:00,2019-05-07 02:28:00,2019-01-01 00:00:00,2019-01-01 00:00:00,361+,27+,120,96.79375,Lahey -- O1 data prep field change -- DIPR 6500,Released,Padmaja Gandhi
+560,US515930,2019-02-01 06:59:00,2019-04-01 03:39:00,2019-02-01 00:00:00,2019-01-01 00:00:00,361+,27+,60,58.861111111111114,Tufts II PHM_S removal from processing,Released,Pragada Kumar
+749,US516009,2019-02-01 09:49:00,2019-11-08 09:01:00,2019-02-01 00:00:00,2019-01-01 00:00:00,360,27+,300,279.96666666666664,Common:  IPro Data Scrub,Requests,Sue Szubzda
+564,US518098,2019-02-08 09:37:00,2020-08-04 10:03:00,2019-02-01 00:00:00,2019-01-01 00:00:00,75,11,361+,543.0180555555555,Fullwell - Centura - Cigna source Estimate,Released,Tricia Huebner
+29,US518283,2019-02-11 05:48:00,2020-09-14 02:08:00,2019-02-01 00:00:00,2019-01-01 00:00:00,45,5,361+,580.8472222222222,Common: Operations Processing: Common Code for Keep_Prod =N,Pending Approval,Pragada Kumar
+772,US522119,2019-02-25 13:08:00,2019-11-12 07:18:00,2019-02-01 00:00:00,2019-01-01 00:00:00,360,27+,270,259.75694444444446,Common: Add Keck USC as data contributor to Impact Database,UAT,Lois Nordstrom
+566,US522302,2019-02-26 02:38:00,2019-05-16 11:55:00,2019-02-01 00:00:00,2019-01-01 00:00:00,361+,27+,90,79.38680555555555,MMO PCR request-adding DM fields to IPRO - Narsaih,Released,Phanikumar Jetti
+567,US522304,2019-02-26 02:45:00,2019-07-03 09:19:00,2019-02-01 00:00:00,2019-01-01 00:00:00,361+,27+,150,127.27361111111111,ProHealth Level of Effort Estimation DRG and Project,Released,Sue Szubzda
+569,US526145,2019-03-11 08:32:00,2020-06-04 15:02:00,2019-03-01 00:00:00,2019-01-01 00:00:00,150,19,361+,451.2708333333333,Common: Add Canopy as data contributor to Impact Database,Released,Lois Nordstrom
+570,US526412,2019-03-12 04:49:00,2019-06-19 00:41:00,2019-03-01 00:00:00,2019-01-01 00:00:00,361+,27+,120,98.82777777777778,MAP Creation For MSA Field,Released,Phanikumar Jetti
+571,US526678,2019-03-12 10:55:00,2020-01-30 05:56:00,2019-03-01 00:00:00,2019-01-01 00:00:00,270,27+,330,323.7923611111111,NYU -Four new NYU Medicaid claims sources,Released,Tricia Huebner
+572,US526683,2019-03-12 11:04:00,2020-06-04 08:11:00,2019-03-01 00:00:00,2019-01-01 00:00:00,150,19,361+,449.8798611111111,Common - Span_elg research--Align PCP warehouse selection logic to PE logic,Released,Sue Szubzda
+573,US526932,2019-03-13 03:49:00,2019-05-07 02:35:00,2019-03-01 00:00:00,2019-01-01 00:00:00,361+,27+,60,54.94861111111111,COMMON: II 7.2 changes,Released,Padmaja Gandhi
+574,US528251,2019-03-18 04:25:00,2019-06-06 01:35:00,2019-03-01 00:00:00,2019-01-01 00:00:00,361+,27+,90,79.88194444444444,Add Imap_Admit_Source map to common Imaps,Released,Pragada Kumar
+575,US528556,2019-03-19 04:03:00,2020-06-25 00:31:00,2019-03-01 00:00:00,2019-01-01 00:00:00,120,16,361+,463.85277777777776,Temple: OPA II 7.1 migration,Released,Padmaja Gandhi
+576,US528569,2019-03-19 04:35:00,2020-09-14 02:14:00,2019-03-01 00:00:00,2019-01-01 00:00:00,45,5,361+,544.9020833333333,Lahey: OPA II 7.1 migration,Released,Padmaja Gandhi
+577,US529511,2019-03-21 08:59:00,2019-11-12 07:22:00,2019-03-01 00:00:00,2019-01-01 00:00:00,360,27+,240,235.9326388888889,UHCCS Americhoice -  PCR Supplement File Processing,Released,Pragada Kumar
+578,US530429,2019-03-26 05:06:00,2019-05-13 07:42:00,2019-03-01 00:00:00,2019-01-01 00:00:00,361+,27+,60,48.108333333333334,PreferredOne IPro v11.1 Migration,Released,Phanikumar Jetti
+579,US531841,2019-03-29 14:23:00,2019-04-19 11:49:00,2019-03-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,20.893055555555556,Fullwell - IP_PULL_FUL_SERVICE_RPT.lst,Released,Tricia Huebner
+580,US532358,2019-04-02 06:11:00,2020-08-18 06:51:00,2019-04-01 00:00:00,2019-01-01 00:00:00,60,9,361+,504.02777777777777,"Horizon BCBS:  ECG, Add Medicaid line of business (LOB)  into current extract.",Released,Sue Szubzda
+581,US532379,2019-04-02 07:24:00,2020-08-25 03:27:00,2019-04-01 00:00:00,2019-01-01 00:00:00,60,8,361+,510.8354166666667,UCDAVIS: OPA II 7.1 migration,Released,Padmaja Gandhi
+582,US534346,2019-04-09 09:37:00,2019-11-12 07:20:00,2019-04-01 00:00:00,2019-01-01 00:00:00,360,27+,240,216.9048611111111,Prohealth -II 7.1 migration,Released,Pragada Kumar
+583,US535247,2019-04-12 08:40:00,2020-09-14 08:10:00,2019-04-01 00:00:00,2019-01-01 00:00:00,30,5,361+,520.9791666666666,Generic - Ipro 11.2 and II 7.2 changes,Released,Pragada Kumar
+584,US537092,2019-04-18 11:58:00,2019-08-13 07:41:00,2019-04-01 00:00:00,2019-01-01 00:00:00,361+,27+,120,116.82152777777777,Benevera: Benevera_Maps,Released,Sue Szubzda
+585,US537254,2019-04-19 07:54:00,2019-05-15 01:37:00,2019-04-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,25.738194444444446,Benevera: IA_PULL_BVR_MAPS,Released,Phanikumar Jetti
+586,US539201,2019-04-29 01:44:00,2020-06-09 01:11:00,2019-04-01 00:00:00,2019-01-01 00:00:00,150,19,361+,406.9770833333333,CHI_WA II7.1 migration,Released,Pragada Kumar
+587,US539560,2019-04-30 05:19:00,2019-05-01 07:12:00,2019-04-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,1.0784722222222223,Tufts_II: Ii 7.0 Migration: PROV_AFFIL_MEM,Released,Tricia Huebner
+588,US540490,2019-05-02 06:45:00,2019-10-22 01:37:00,2019-05-01 00:00:00,2019-01-01 00:00:00,360,27+,180,172.7861111111111,II 7.1 common : WH and maps changes,Released,Padmaja Gandhi
+589,US541690,2019-05-06 10:04:00,2020-01-28 06:27:00,2019-05-01 00:00:00,2019-01-01 00:00:00,270,27+,270,266.84930555555553,WESTMED:  UHC PCR Request - Add new population - Analysis of required fields requested by 5/17,Released,Sue Szubzda
+590,US541939,2019-05-07 02:40:00,2020-09-14 02:11:00,2019-05-01 00:00:00,2019-01-01 00:00:00,45,5,361+,495.9798611111111,CHI_TX: OPA II 7.1 migration,Released,Padmaja Gandhi
+591,US543846,2019-05-13 12:48:00,2019-08-29 10:33:00,2019-05-01 00:00:00,2019-01-01 00:00:00,361+,27+,120,107.90625,Common: IDB - add application of xwalk maps from O1 to Impact Database Module,Released,Lois Nordstrom
+592,US543992,2019-05-14 07:25:00,2019-11-12 07:16:00,2019-05-01 00:00:00,2019-01-01 00:00:00,360,27+,210,181.99375,MVP:  IPro Re-implementation,Released,Sue Szubzda
+593,US545876,2019-05-21 07:27:00,2019-11-12 07:20:00,2019-05-01 00:00:00,2019-01-01 00:00:00,360,27+,180,174.9951388888889,Palmetto II7.1 migration,Released,Pragada Kumar
+594,US546563,2019-05-23 06:19:00,2019-07-02 04:10:00,2019-05-01 00:00:00,2019-01-01 00:00:00,361+,27+,45,39.91041666666667,Fullwell: Update_LABDATA Script Modification,Released,Phanikumar Jetti
+595,US546568,2019-05-23 06:32:00,2020-06-09 00:54:00,2019-05-01 00:00:00,2019-01-01 00:00:00,150,19,361+,382.7652777777778,Osler IIRP II 7.1 migration,Released,Padmaja Gandhi
+596,US546712,2019-05-23 11:48:00,2019-07-24 20:22:00,2019-05-01 00:00:00,2019-01-01 00:00:00,361+,27+,75,62.356944444444444,Common: IDB - updates requested after reviewing IVM.,Released,Lois Nordstrom
+597,US549480,2019-06-05 06:47:00,2020-06-29 08:28:00,2019-06-01 00:00:00,2019-01-01 00:00:00,120,16,361+,390.0701388888889,Healthnet CA: New Workflow Scripts,Released,Christopher Amendola
+750,US550029,2019-06-06 11:12:00,2019-11-19 07:20:00,2019-06-01 00:00:00,2019-01-01 00:00:00,330,27+,180,165.8388888888889,Ongoing support and Communications - Tricia - June2019,Requests,Tricia Huebner
+598,US552109,2019-06-13 16:19:00,2019-08-29 10:19:00,2019-06-01 00:00:00,2019-01-01 00:00:00,361+,27+,90,76.75,Common: IDB - Add updates that were identified during II Benchmarks that need to be added to production program version also,Released,Lois Nordstrom
+599,US554170,2019-06-20 12:38:00,2019-07-03 09:18:00,2019-06-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,12.86111111111111,TPL (Temple) : Add CUSTOM_MAP_TERMED_FLAG (Assist John V. With GitHub Release),Released,Sue Szubzda
+600,US555146,2019-06-25 09:57:00,2020-06-17 12:57:00,2019-06-01 00:00:00,2019-01-01 00:00:00,120,17,360,358.125,UHC C&S NC IDSTRAT,Released,Sue Szubzda
+601,US558963,2019-07-10 04:31:00,2020-01-02 00:28:00,2019-07-01 00:00:00,2019-01-01 00:00:00,300,27+,180,175.83125,ProHealth: Prov Affil Change,Released,Pragada Kumar
+602,US559743,2019-07-11 08:05:00,2019-08-13 07:39:00,2019-07-01 00:00:00,2019-01-01 00:00:00,361+,27+,45,32.981944444444444,Common:  II Maps_Valid - Add ERRCode Description to LST file,Released,Sue Szubzda
+603,US560396,2019-07-12 13:49:00,2019-11-12 07:21:00,2019-07-01 00:00:00,2019-01-01 00:00:00,360,27+,150,122.73055555555555,ProHealth: Product Hierarchy Change,Released,Pragada Kumar
+604,US560637,2019-07-15 05:13:00,2020-03-19 12:07:00,2019-07-01 00:00:00,2019-01-01 00:00:00,210,27+,270,248.2875,THP: Add the values from CUST_PROV_AFFIL_MEM  into MEM_USERDEF_1 so THP can use MEM_USERDEF_1  field for filtering in AGR.,Released,Tricia Huebner
+605,US564020,2019-07-23 08:29:00,2020-01-28 22:29:00,2019-07-01 00:00:00,2019-01-01 00:00:00,270,27+,210,189.58333333333334,MMO: IPro 11.2 Migration,Released,Pragada Kumar
+606,US564746,2019-07-25 09:49:00,2019-08-20 07:44:00,2019-07-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,25.913194444444443,CHI_TX and CHI_WA fix ASSGN file handling in Maps programs,Released,Christopher Amendola
+607,US564749,2019-07-25 10:03:00,2020-09-10 15:40:00,2019-07-01 00:00:00,2019-01-01 00:00:00,45,5,361+,413.2340277777778,COMMON: DW Cur ELG/CLM/LAB/SUB Rpt udate,Released,Sue Szubzda
+608,US564861,2019-07-25 15:00:00,2019-08-13 07:58:00,2019-07-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,18.706944444444446,COMMON: IPRO PULL_Member_v29span.sas - correct address1 and address2 assignments as these are reversed,Released,Sue Szubzda
+609,US567775,2019-08-06 06:05:00,2020-06-29 08:27:00,2019-08-01 00:00:00,2019-01-01 00:00:00,120,16,330,328.0986111111111,Common: Create Common macros DCM OPA Maps Macro,Released,Christopher Amendola
+610,US567794,2019-08-06 06:39:00,2019-08-27 18:55:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,21.511111111111113,II Benchmarks - Population Selection Criteria,Released,Christopher Amendola
+773,US568621,2019-08-07 16:59:00,2019-11-22 13:02:00,2019-08-01 00:00:00,2019-01-01 00:00:00,330,27+,120,106.83541666666666,Rework GitHub workflow,UAT,Christopher Amendola
+611,US569348,2019-08-11 08:42:00,2019-08-14 05:58:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,2.886111111111111,Common Code management process updates - Eliminate 'dev' code modules in common code,Released,Christopher Amendola
+612,US569852,2019-08-13 06:32:00,2020-06-29 08:32:00,2019-08-01 00:00:00,2019-01-01 00:00:00,120,16,330,321.0833333333333,Move all non-printable or special character QA (removal) to earliest point in ETL,Released,Christopher Amendola
+613,US570767,2019-08-14 14:32:00,2020-08-18 06:50:00,2019-08-01 00:00:00,2019-01-01 00:00:00,60,9,361+,369.6791666666667,H636663 HCA/VCP CPRM to OPA Migration--DCM client ( Hospital Corporation of America (HCA) ),Released,Sue Szubzda
+614,US570986,2019-08-16 04:48:00,2019-10-23 18:43:00,2019-08-01 00:00:00,2019-01-01 00:00:00,360,27+,75,68.57986111111111,BCBSNC: base cur file overwrite,Released,Christopher Amendola
+615,US571369,2019-08-19 07:36:00,2019-08-20 07:48:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,1.0083333333333333,H451171 cms member address field request (IIDATA-3443),Released,Christopher Amendola
+616,US572066,2019-08-20 06:29:00,2019-08-20 07:44:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,0.052083333333333336,H135772 (CHI_TX)Missing member address from cms sources (IIDATA 3442),Released,Christopher Amendola
+617,US572465,2019-08-21 07:14:00,2020-06-09 00:43:00,2019-08-01 00:00:00,2019-01-01 00:00:00,150,19,300,292.7284722222222,Empire_VBR: PCR Request: NP/PA Attribution,Released,Padmaja Gandhi
+751,US572476,2019-08-21 07:42:00,2020-10-13 07:24:00,2019-08-01 00:00:00,2019-01-01 00:00:00,15,1,361+,418.9875,Empire_VBR: PCR: Provider Affiliation Modifications,Requests,Padmaja Gandhi
+618,US573257,2019-08-24 06:54:00,2019-08-31 09:19:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,7.100694444444445,IIDATA-3587: H941216 -2019 Q2 Assignment List Report (QASSGN) renamed - P.{NNNN}.ACO.QALR.D{yymmdd}.T{hhmmss},Released,Christopher Amendola
+619,US573258,2019-08-24 07:19:00,2019-09-04 10:32:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,11.134027777777778,Solution to back-out duplicate records from CCLF run-out files for 2018 for all MSSP sources.,Released,Christopher Amendola
+620,US574113,2019-08-27 18:56:00,2019-08-28 14:18:00,2019-08-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,0.8069444444444445,UC-Davis update legacy attribution_cms for ASSGN file changes by CMS,Released,Christopher Amendola
+2,US575102,2019-08-29 11:48:00,2020-07-28 06:10:00,2019-08-01 00:00:00,2019-01-01 00:00:00,90,12,360,333.7652777777778,Common: Data_paths update to account for the use of '-' in the Somerville server names,Approval,Lois Nordstrom
+621,US575663,2019-09-03 06:45:00,2020-05-10 22:55:00,2019-09-01 00:00:00,2019-01-01 00:00:00,180,23,270,250.67361111111111,USB: MAPS Input Change Request,Released,Phanikumar Jetti
+622,US575666,2019-09-03 06:50:00,2020-06-04 15:02:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,275.34166666666664,COMMON:  DRG Prep for all clients--DIS_STATUS UPDATE – Remove invalid characters (non-numeric),Released,Sue Szubzda
+623,US575795,2019-09-03 09:39:00,2020-06-04 15:02:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,275.22430555555553,LVHN: IDB module add member and provider xwalk process,Released,Lois Nordstrom
+624,US575804,2019-09-03 09:49:00,2020-06-09 15:05:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,280.21944444444443,Common: II 7.3 Bill Type to POS Crosswalk,Released,Lois Nordstrom
+625,US575851,2019-09-03 11:00:00,2020-06-04 15:02:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,275.16805555555555,CHI TX: IDB module add member and provider xwalk process,Released,Lois Nordstrom
+626,US575855,2019-09-03 11:02:00,2020-06-04 15:02:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,275.1666666666667,CHI WA: IDB module add member and provider xwalk process,Released,Lois Nordstrom
+627,US575856,2019-09-03 11:03:00,2020-06-04 15:02:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,275.1659722222222,UC Davis: IDB module add member and provider xwalk process,Released,Lois Nordstrom
+628,US575857,2019-09-03 11:05:00,2020-06-04 15:02:00,2019-09-01 00:00:00,2019-01-01 00:00:00,150,19,300,275.1645833333333,USC Keck: IDB module add member and provider xwalk process,Released,Lois Nordstrom
+629,US576971,2019-09-06 04:57:00,2019-09-12 07:36:00,2019-09-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,6.110416666666667,H641171 MHC PCM(MSSP) volume change - IIDATA-3731,Released,Christopher Amendola
+630,US577758,2019-09-10 06:08:00,2020-01-22 10:30:00,2019-09-01 00:00:00,2019-01-01 00:00:00,270,27+,150,134.18194444444444,NYU add new medicaid source HealthPlus,Released,Tricia Huebner
+631,US577884,2019-09-10 08:22:00,2019-10-02 08:06:00,2019-09-01 00:00:00,2019-01-01 00:00:00,361+,27+,30,21.988888888888887,CHI_WA Apply MSSP Run-out file de-duplication,Released,Christopher Amendola
+632,US580800,2019-09-17 12:11:00,2019-09-19 12:49:00,2019-09-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,2.026388888888889,CHI_TX II 71 Branch Issue,Released,Lois Nordstrom
+633,US582151,2019-09-20 07:21:00,2019-10-22 01:46:00,2019-09-01 00:00:00,2019-01-01 00:00:00,360,27+,45,31.76736111111111,Lahey: Maps_valid Error,Released,Padmaja Gandhi
+634,US582165,2019-09-20 07:32:00,2019-10-22 01:46:00,2019-09-01 00:00:00,2019-01-01 00:00:00,360,27+,45,31.759722222222223,Lahey: CUSTOM_CONTRACT does not exist,Released,Padmaja Gandhi
+635,US582301,2019-09-20 10:24:00,2019-11-04 04:46:00,2019-09-01 00:00:00,2019-01-01 00:00:00,360,27+,45,44.765277777777776,Migrating UHC Empire to IIRP v7.1.2,Released,Pragada Kumar
+636,US582323,2019-09-20 10:58:00,2020-06-25 00:31:00,2019-09-01 00:00:00,2019-01-01 00:00:00,120,16,300,278.56458333333336,"To upgrade CDPHP from Impact Pro v9.0 to the latest software release, v11.2",Released,Phanikumar Jetti
+637,US583355,2019-09-24 01:08:00,2020-09-14 02:12:00,2019-09-01 00:00:00,2019-01-01 00:00:00,45,5,360,356.0444444444444,Common: II 7.3 ETL map changes,Released,Padmaja Gandhi
+638,US584773,2019-09-26 13:09:00,2019-10-24 14:03:00,2019-09-01 00:00:00,2019-01-01 00:00:00,360,27+,30,28.0375,H743123 Verdugo Hills Source Add,Released,Christopher Amendola
+9,US584774,2019-09-26 13:17:00,2020-05-04 07:03:00,2019-09-01 00:00:00,2019-01-01 00:00:00,180,24,240,220.74027777777778,H302436 AmeriHealth,Dev,Christopher Amendola
+639,US584836,2019-09-27 05:26:00,2019-10-03 07:52:00,2019-09-01 00:00:00,2019-01-01 00:00:00,361+,27+,15,6.101388888888889,Palmetto: downgrade extract script,Released,Christopher Amendola
+640,US585864,2019-10-01 12:07:00,2020-06-04 15:02:00,2019-10-01 00:00:00,2019-01-01 00:00:00,150,19,270,247.12152777777777,Common- Update IDB module common_member_overlap_v20.sas,Released,Lois Nordstrom
+641,US586159,2019-10-02 07:39:00,2020-05-08 15:06:00,2019-10-01 00:00:00,2019-01-01 00:00:00,180,23,240,219.31041666666667,Common -  II DRG GROUPER Annual Update (to v37),Released,Sue Szubzda
+642,US586946,2019-10-03 13:39:00,2020-06-04 15:01:00,2019-10-01 00:00:00,2019-01-01 00:00:00,150,19,270,245.05694444444444,Tufts: IDB - rolling off months of data in DW module before IDB has archived the year.,Released,Lois Nordstrom
+643,US588396,2019-10-09 09:11:00,2019-11-12 07:16:00,2019-10-01 00:00:00,2019-01-01 00:00:00,360,27+,45,33.920138888888886,MMO: Arrow Character Removal Request,Released,Sue Szubzda
+644,US590113,2019-10-16 09:56:00,2019-10-22 03:16:00,2019-10-01 00:00:00,2019-01-01 00:00:00,360,27+,15,5.722222222222222,CUSTOM_MAP_RISK_TYPE fix II 7.1,Released,Pragada Kumar
+645,US591633,2019-10-22 07:13:00,2020-06-16 06:59:00,2019-10-01 00:00:00,2019-01-01 00:00:00,120,18,240,237.99027777777778,Common:  DCM OPA Common Map Updates-POS and DRG v37,Released,Sue Szubzda
+646,US592158,2019-10-23 12:13:00,2020-06-04 15:12:00,2019-10-01 00:00:00,2019-01-01 00:00:00,150,19,240,225.12430555555557,WESTMED: Impact Pro: Normalized Pricing 3.1 to 5.1,Released,Lois Nordstrom
+647,US594259,2019-10-31 07:13:00,2020-01-28 01:26:00,2019-10-01 00:00:00,2019-01-01 00:00:00,270,27+,90,88.75902777777777,Prefered one Migration from 11.0 to 11.2,Released,Phanikumar Jetti
+648,US594260,2019-10-31 07:17:00,2019-12-10 02:32:00,2019-10-01 00:00:00,2019-01-01 00:00:00,330,27+,45,39.802083333333336,Apply MSSP Run-out file de-duplication for Palmetto,Released,Phanikumar Jetti
+649,US594316,2019-10-31 10:15:00,2019-11-22 13:02:00,2019-10-01 00:00:00,2019-01-01 00:00:00,330,27+,30,22.115972222222222,Common - General Branch Migration Solution required (GitHUb),Released,Christopher Amendola
+752,US598002,2019-11-14 10:47:00,2019-11-26 07:15:00,2019-11-01 00:00:00,2019-01-01 00:00:00,330,27+,15,11.852777777777778,Common:  IPRO PULL UPGRADE to Process the Pull by Calendar Year and Set Years Back Together,Requests,Christopher Amendola
+650,US598398,2019-11-15 13:14:00,2020-06-04 15:01:00,2019-11-01 00:00:00,2019-01-01 00:00:00,150,19,210,202.07430555555555,Common: IDB - updates needed with XLA no longer in active and no data contributors with lab data.,Released,Lois Nordstrom
+651,US598399,2019-11-15 13:22:00,2020-06-04 15:01:00,2019-11-01 00:00:00,2019-01-01 00:00:00,150,19,210,202.06875,Westmed: Test Ipro NP process without running ACO and CMS scripts and compare to a run with the ACO and CMS scripts.,Released,Lois Nordstrom
+652,US598533,2019-11-18 00:15:00,2019-12-10 02:37:00,2019-11-01 00:00:00,2019-01-01 00:00:00,330,27+,30,22.09861111111111,Apply MSSP Run-out file de-duplication for Prohealth,Released,Phanikumar Jetti
+653,US599040,2019-11-19 08:05:00,2019-12-10 02:25:00,2019-11-01 00:00:00,2019-01-01 00:00:00,330,27+,30,20.76388888888889,Apply MSSP Run-out file de-duplication for CHI_TX,Released,Phanikumar Jetti
+654,US600562,2019-11-25 07:17:00,2020-02-03 10:59:00,2019-11-01 00:00:00,2019-01-01 00:00:00,270,27+,75,70.15416666666667,FullWell Anthem File Change for 12/2,Released,Sue Szubzda
+655,US601036,2019-11-26 13:13:00,2019-12-16 00:47:00,2019-11-01 00:00:00,2019-01-01 00:00:00,330,27+,30,19.481944444444444,Preferred One Ipro 11.2 Migration Issue,Released,Pragada Kumar
+783,US601782,2019-12-02 08:13:00,2020-07-28 06:11:00,2019-12-01 00:00:00,2019-01-01 00:00:00,90,12,240,238.9152777777778,Keeping members in new populations out of II for OPA Crosswalk model clients,Validation,Christopher Amendola
+656,US603398,2019-12-04 07:20:00,2020-01-28 06:20:00,2019-12-01 00:00:00,2019-01-01 00:00:00,270,27+,60,54.958333333333336,Tufts: Remove Internal Medicine physicians (who are not PCPs) form existing peer def and create new peer def for Non-PCP Internal Med physicians,Released,Tricia Huebner
+657,US603406,2019-12-04 07:33:00,2020-05-11 08:40:00,2019-12-01 00:00:00,2019-01-01 00:00:00,180,23,180,159.04652777777778,USB: Distinct Member Enrollment,Released,Sue Szubzda
+658,US604433,2019-12-06 10:35:00,2020-03-06 13:51:00,2019-12-01 00:00:00,2019-01-01 00:00:00,240,27+,120,91.1361111111111,Lahey: Impact Analysis Pull: DropRecord_provider_Lahey,Released,Christopher Amendola
+659,US604492,2019-12-06 13:23:00,2020-01-16 12:39:00,2019-12-01 00:00:00,2019-01-01 00:00:00,300,27+,45,40.96944444444444,Common:  II DCM Spec Map Workbook Update,Released,Sue Szubzda
+660,US604959,2019-12-10 04:39:00,2020-06-09 01:08:00,2019-12-01 00:00:00,2019-01-01 00:00:00,150,19,210,181.85347222222222,7.3 input schema changes Discharge Status Map,Released,Pragada Kumar
+661,US605812,2019-12-12 10:55:00,2019-12-13 14:39:00,2019-12-01 00:00:00,2019-01-01 00:00:00,330,27+,15,1.1555555555555554,CHI_* - MSSP set eff_dt_orig from CCLF filename and not Cycle date,Released,Christopher Amendola
+774,US606507,2019-12-16 11:58:00,2020-09-04 09:34:00,2019-12-01 00:00:00,2019-01-01 00:00:00,45,6,270,262.9,Common: IDB - Setting up  IVM.,UAT,Lois Nordstrom
+662,US606640,2019-12-16 22:56:00,2020-02-27 09:03:00,2019-12-01 00:00:00,2019-01-01 00:00:00,240,27+,75,72.42152777777778,Common: II 7.3  IMAP_ICDDX and IMAP_ICD_PROC,Released,Phanikumar Jetti
+663,US607592,2019-12-19 10:47:00,2020-03-06 13:50:00,2019-12-01 00:00:00,2019-01-01 00:00:00,240,27+,90,78.12708333333333,MHC - MSSP/CMS - Changes in quarterly assignment file naming,Released,Christopher Amendola
+664,US608743,2019-12-30 00:30:00,2020-09-14 02:11:00,2019-12-01 00:00:00,2019-01-01 00:00:00,45,5,270,259.0701388888889,Vera: City of Everett DC addtion,Released,Padmaja Gandhi
+665,US608955,2019-12-31 11:47:00,2020-01-16 12:39:00,2019-12-01 00:00:00,2019-01-01 00:00:00,300,27+,30,16.03611111111111,Common: SAS Annual Autoexec Update for 2020,Released,Sue Szubzda
+666,US610213,2020-01-07 06:10:00,2020-05-10 22:52:00,2020-01-01 00:00:00,2020-01-01 00:00:00,180,23,150,124.69583333333334,Quarterly Common Maps Update Failure,Released,Phanikumar Jetti
+667,US610237,2020-01-07 07:08:00,2020-10-06 07:43:00,2020-01-01 00:00:00,2020-01-01 00:00:00,15,2,300,273.02430555555554,Fullwell - Add 5 new data sources,Released,Tricia Huebner
+668,US610304,2020-01-07 09:05:00,2020-02-18 11:24:00,2020-01-01 00:00:00,2020-01-01 00:00:00,240,27+,45,42.09652777777778,Common - Update common data path set up excel file to CSV production clients_2020,Released,Tricia Huebner
+10,US612073,2020-01-14 07:19:00,2020-02-07 10:40:00,2020-01-01 00:00:00,2020-01-01 00:00:00,270,27+,30,24.139583333333334,Westmed:   Add field to MED for II and IPro,Dev,Tricia Huebner
+669,US612078,2020-01-14 07:22:00,2020-04-27 01:06:00,2020-01-01 00:00:00,2020-01-01 00:00:00,180,25,120,103.7388888888889,UHC C&S (AMC):  Post-PE script to update managed_flag,Released,Pragada Kumar
+670,US612081,2020-01-14 07:30:00,2020-06-04 15:01:00,2020-01-01 00:00:00,2020-01-01 00:00:00,150,19,150,142.31319444444443,Common: Update DL invokes to new server,Released,Lois Nordstrom
+671,US613094,2020-01-16 17:40:00,2020-05-05 09:15:00,2020-01-01 00:00:00,2020-01-01 00:00:00,180,24,120,109.64930555555556,H135535 New Rx Company,Released,Tricia Huebner
+672,US613475,2020-01-17 14:43:00,2020-02-06 12:16:00,2020-01-01 00:00:00,2020-01-01 00:00:00,270,27+,30,19.897916666666667,Dean: DHP - Add Core Source to Claims,Released,Tricia Huebner
+673,US613812,2020-01-21 07:25:00,2020-03-10 07:43:00,2020-01-01 00:00:00,2020-01-01 00:00:00,240,27+,60,49.0125,Tufts:  Tufts_II: Network_Status,Released,Sue Szubzda
+674,US614686,2020-01-23 08:45:00,2020-10-06 07:44:00,2020-01-01 00:00:00,2020-01-01 00:00:00,15,2,270,256.9576388888889,PreferredOne populating MAP_MANAGED_FLAG.,Released,Sue Szubzda
+675,US614696,2020-01-23 08:53:00,2020-08-18 06:52:00,2020-01-01 00:00:00,2020-01-01 00:00:00,60,9,210,207.91597222222222,PreferredOne- Prescribing provider not showing on RX Adherence tab (IPro).  Please check ETL for possible root cause.,Released,Sue Szubzda
+753,US615240,2020-01-24 12:43:00,2020-03-03 07:12:00,2020-01-01 00:00:00,2020-01-01 00:00:00,240,27+,45,38.77013888888889,PreferredOne - use one of the 2 provider user defined fields as a passthrough field for Impact Intelligence.,Requests,Sue Szubzda
+676,US615278,2020-01-24 15:19:00,2020-08-20 12:09:00,2020-01-01 00:00:00,2020-01-01 00:00:00,60,8,210,208.86805555555554,ProHealth: Assgn to Qlr Files,Released,Christopher Amendola
+677,US616465,2020-01-29 13:45:00,2020-02-18 08:24:00,2020-01-01 00:00:00,2020-01-01 00:00:00,240,27+,30,19.777083333333334,Reliant - HPHC: RX Changes - new fields and adjustments,Released,Tricia Huebner
+678,US616496,2020-01-29 15:21:00,2020-04-23 01:16:00,2020-01-01 00:00:00,2020-01-01 00:00:00,180,25,90,84.41319444444444,Preferred One: IC LOB Map ETL Issue - INC14606688,Released,Phanikumar Jetti
+679,US616747,2020-01-30 10:03:00,2020-02-07 11:57:00,2020-01-01 00:00:00,2020-01-01 00:00:00,270,27+,15,8.079166666666667,MMO - Scrub Member IDs in disease management file of leading '*'s,Released,Tricia Huebner
+754,US618070,2020-02-03 11:19:00,2020-10-06 07:39:00,2020-02-01 00:00:00,2020-01-01 00:00:00,15,2,270,245.84722222222223,PreferredOne:  IPro - show member's attibuted PCP in member list,Requests,Sue Szubzda
+680,US619642,2020-02-07 09:12:00,2020-05-08 15:06:00,2020-02-01 00:00:00,2020-01-01 00:00:00,180,23,120,91.24583333333334,ProHealth:  Update ProHealth_Maps.sas DRG Reporting - IDIA_ERR to IDIA_WARN,Released,Sue Szubzda
+681,US620267,2020-02-10 13:21:00,2020-10-13 14:00:00,2020-02-01 00:00:00,2020-01-01 00:00:00,15,1,270,246.02708333333334,Common: update_clm_v20.sas needs to accomodate for bad data when figuring out min and max dates,Released,Lois Nordstrom
+755,US620464,2020-02-11 06:02:00,2020-08-31 12:31:00,2020-02-01 00:00:00,2020-01-01 00:00:00,45,7,210,202.27013888888888,Blank User Story,Requests,
+11,US623018,2020-02-19 07:03:00,2020-08-13 07:43:00,2020-02-01 00:00:00,2020-01-01 00:00:00,75,9,180,176.02777777777777,MMO - IPro - DM program is terming in June - IPro  and II contract will continue--Update will be to use last DM map until new DM map can be provided by MMO,Dev,Sue Szubzda
+682,US623034,2020-02-19 07:26:00,2020-08-18 06:52:00,2020-02-01 00:00:00,2020-01-01 00:00:00,60,9,210,180.9763888888889,Common: Ipro Pull Servicemedphm - update all beg_dt/from_dt to be DOS and all end_dt to be to_dt,Released,Sue Szubzda
+683,US624836,2020-02-26 02:06:00,2020-08-26 02:57:00,2020-02-01 00:00:00,2020-01-01 00:00:00,60,8,210,182.03541666666666,DRG: Client Maps Support,Released,Phanikumar Jetti
+684,US624837,2020-02-26 02:08:00,2020-06-04 08:12:00,2020-02-01 00:00:00,2020-01-01 00:00:00,150,19,120,99.25277777777778,MMO Weekly & Bi-Weekly Processing,Released,Sue Szubzda
+685,US626160,2020-03-02 06:43:00,2020-04-30 15:27:00,2020-03-01 00:00:00,2020-01-01 00:00:00,180,24,60,59.36388888888889,Lehigh_OPA: Dev to prod\trunk,Released,Christopher Amendola
+686,US626254,2020-03-02 10:49:00,2020-10-06 07:44:00,2020-03-01 00:00:00,2020-01-01 00:00:00,15,2,240,217.87152777777777,BCBSNC: Data Scrub--double quotes causing issues in OPA,Released,Sue Szubzda
+687,US626290,2020-03-02 12:14:00,2020-04-30 15:28:00,2020-03-01 00:00:00,2020-01-01 00:00:00,180,24,60,59.13472222222222,Empire_VBR:  Branch to prod Trunk,Released,Christopher Amendola
+688,US627926,2020-03-07 11:34:00,2020-06-04 15:04:00,2020-03-01 00:00:00,2020-01-01 00:00:00,150,19,90,89.14583333333333,Common: II Benchmarks prep data for June run,Released,Lois Nordstrom
+689,US628526,2020-03-10 06:54:00,2020-10-06 07:45:00,2020-03-01 00:00:00,2020-01-01 00:00:00,15,2,240,210.03541666666666,DCM client maps:  apply II scrub to maps and report on duplicates,Released,Sue Szubzda
+690,US629855,2020-03-13 00:22:00,2020-09-14 08:09:00,2020-03-01 00:00:00,2020-01-01 00:00:00,30,5,210,185.32430555555555,Benevera OPA II72 migration,Released,Pragada Kumar
+691,US630085,2020-03-13 09:48:00,2020-03-17 05:53:00,2020-03-01 00:00:00,2020-01-01 00:00:00,240,27+,15,3.8368055555555554,Empire_VBR: EHP_EHP_MAP_PEER_GRP_PD20191031,Released,Tricia Huebner
+692,US630289,2020-03-13 16:48:00,2020-06-04 15:01:00,2020-03-01 00:00:00,2020-01-01 00:00:00,150,19,90,82.92569444444445,Common: Impact Database - NHI cost factor spreadsheets,Released,Lois Nordstrom
+693,US630426,2020-03-16 03:22:00,2020-09-14 08:00:00,2020-03-01 00:00:00,2020-01-01 00:00:00,30,5,210,182.19305555555556,Lehigh  OPA II72 migration,Released,Pragada Kumar
+694,US630489,2020-03-16 06:31:00,2020-04-23 01:16:00,2020-03-01 00:00:00,2020-01-01 00:00:00,180,25,45,37.78125,BCBSNC: MAP_CHECK,Released,Phanikumar Jetti
+12,US632007,2020-03-20 11:24:00,2020-04-08 06:22:00,2020-03-01 00:00:00,2020-01-01 00:00:00,210,27+,30,18.790277777777778,BCBS NC -Adding Coverage Class code into the Optum Field: PAT_ATTR_10,Dev,Tricia Huebner
+695,US633755,2020-03-27 05:25:00,2020-03-31 12:52:00,2020-03-01 00:00:00,2020-01-01 00:00:00,210,27+,15,4.310416666666667,ProHealth Mem_Match Issue,Released,Christopher Amendola
+696,US633823,2020-03-27 08:21:00,2020-09-14 08:00:00,2020-03-01 00:00:00,2020-01-01 00:00:00,30,5,180,170.98541666666668,Keck_USC  OPA II72 migration,Released,Pragada Kumar
+697,US634548,2020-03-31 06:38:00,2020-10-06 07:44:00,2020-03-01 00:00:00,2020-01-01 00:00:00,15,2,210,189.04583333333332,COMMON:  elg_qa and elg_qa OPA update / claim_qa update),Released,Sue Szubzda
+698,US634561,2020-03-31 06:56:00,2020-09-14 02:04:00,2020-03-01 00:00:00,2020-01-01 00:00:00,45,5,180,166.79722222222222,UHC Empire Upgrade to IIRP 7.3 - ETL Updates,Released,Pragada Kumar
+699,US636718,2020-04-06 07:03:00,2020-10-06 07:43:00,2020-04-01 00:00:00,2020-01-01 00:00:00,15,2,210,183.02777777777777,Horizon_BCBS: HZN_HZN_MAP_NATIVE_PEER.dat,Released,Sue Szubzda
+700,US637815,2020-04-08 07:43:00,2020-10-06 07:44:00,2020-04-01 00:00:00,2020-01-01 00:00:00,15,2,210,181.00069444444443,UHC C&S: PCR:  Additional IPRO fields Request,Released,Sue Szubzda
+701,US639366,2020-04-12 12:42:00,2020-10-06 07:44:00,2020-04-01 00:00:00,2020-01-01 00:00:00,15,2,180,176.79305555555555,Fullwell - Aetna Change from ENROLL4 to ENROLL5,Released,Sue Szubzda
+702,US641439,2020-04-16 08:58:00,2020-05-08 09:54:00,2020-04-01 00:00:00,2020-01-01 00:00:00,180,23,30,22.038888888888888,Fullwell Member Matching Update,Released,Tricia Huebner
+703,US643179,2020-04-22 05:21:00,2020-04-23 01:10:00,2020-04-01 00:00:00,2020-01-01 00:00:00,180,25,15,0.8256944444444444,CDPHP IC_LOB Map,Released,Phanikumar Jetti
+704,US644525,2020-04-27 09:15:00,2020-05-05 08:53:00,2020-04-01 00:00:00,2020-01-01 00:00:00,180,24,15,7.9847222222222225,Impact Pro Labdata Update,Released,Tricia Huebner
+705,US644750,2020-04-28 05:14:00,2020-08-24 01:11:00,2020-04-01 00:00:00,2020-01-01 00:00:00,60,8,120,117.83125,USB: Hex CHaracter Removal,Released,Pragada Kumar
+706,US644751,2020-04-28 05:21:00,2020-05-10 22:55:00,2020-04-01 00:00:00,2020-01-01 00:00:00,180,23,15,12.731944444444444,"Program errors, updates and notes during 2020_Q1 version_2 map updates",Released,Phanikumar Jetti
+707,US645080,2020-04-28 13:50:00,2020-06-04 15:17:00,2020-04-01 00:00:00,2020-01-01 00:00:00,150,19,45,37.06041666666667,Tufts_II IDB med fix,Released,Lois Nordstrom
+708,US645286,2020-04-29 04:31:00,2020-06-09 01:39:00,2020-04-01 00:00:00,2020-01-01 00:00:00,150,19,45,40.88055555555555,Westmed II 7.3 migration,Released,Pragada Kumar
+709,US645287,2020-04-29 04:38:00,2020-05-10 22:55:00,2020-04-01 00:00:00,2020-01-01 00:00:00,180,23,15,11.761805555555556,Westmed IPRO 11.2 migration,Released,Padmaja Gandhi
+775,US645728,2020-04-29 16:06:00,2020-09-28 10:45:00,2020-04-01 00:00:00,2020-01-01 00:00:00,30,3,180,151.77708333333334,COMMON:  SDoH DW Extract,UAT,Sue Szubzda
+710,US645918,2020-04-30 08:55:00,2020-05-05 08:36:00,2020-04-01 00:00:00,2020-01-01 00:00:00,180,24,15,4.986805555555556,Horizon_BCBS: Pull Timing Comparison,Released,Sue Szubzda
+711,US646123,2020-04-30 15:29:00,2020-07-20 12:21:00,2020-04-01 00:00:00,2020-01-01 00:00:00,90,13,90,80.86944444444444,Common: IPro Member data enrichment with SDOH,Released,Christopher Amendola
+712,US646654,2020-05-04 09:08:00,2020-06-29 08:28:00,2020-05-01 00:00:00,2020-01-01 00:00:00,120,16,60,55.97222222222222,H772 CCLF ASSGN (ALR) files - New naming convention logic needed for file loading,Released,Christopher Amendola
+713,US647028,2020-05-05 08:17:00,2020-10-06 07:45:00,2020-05-01 00:00:00,2020-01-01 00:00:00,15,2,180,153.9777777777778,Common:  IPRO PULL SERVICEMEDPHM efficiency update,Released,Sue Szubzda
+30,US648541,2020-05-08 10:21:00,2020-08-13 07:43:00,2020-05-01 00:00:00,2020-01-01 00:00:00,75,9,120,96.89027777777778,Common: Verify all clients are pointing to common single-quote fix program vs. client-specific,Pending Approval,Sue Szubzda
+714,US651287,2020-05-18 15:06:00,2020-10-06 07:43:00,2020-05-01 00:00:00,2020-01-01 00:00:00,15,2,150,140.6923611111111,Fullwell: Remove CIGNA data source.,Released,Sue Szubzda
+776,US651371,2020-05-19 03:45:00,2020-08-06 07:40:00,2020-05-01 00:00:00,2020-01-01 00:00:00,75,10,90,79.16319444444444,Tufts_II II 7.3 migration,UAT,Pragada Kumar
+715,US651567,2020-05-19 11:28:00,2020-09-14 08:00:00,2020-05-01 00:00:00,2020-01-01 00:00:00,30,5,120,117.85555555555555,NYU_01 II 7.2migration,Released,Padmaja Gandhi
+716,US653352,2020-05-26 12:29:00,2020-10-13 14:01:00,2020-05-01 00:00:00,2020-01-01 00:00:00,15,1,150,140.0638888888889,Common: IDB - change report for pull servicemed.,Released,Lois Nordstrom
+717,US655670,2020-06-02 07:43:00,2020-10-06 07:44:00,2020-06-01 00:00:00,2020-01-01 00:00:00,15,2,150,126.00069444444445,Fullwell: Labdata Pull Update,Released,Sue Szubzda
+718,US656542,2020-06-03 13:13:00,2020-08-18 06:51:00,2020-06-01 00:00:00,2020-01-01 00:00:00,60,9,90,75.73472222222222,Fullwell: Terminated Centura Payers: AETNA MA and United Secure Horizons,Released,Sue Szubzda
+719,US656970,2020-06-04 15:20:00,2020-06-17 11:19:00,2020-06-01 00:00:00,2020-01-01 00:00:00,120,17,15,12.832638888888889,Westmed: Ipro remove NP compeletely from process. Also remove the CMS and ACO scripts that were used pre NP process.,Released,Lois Nordstrom
+720,US657115,2020-06-05 06:40:00,2020-08-18 06:51:00,2020-06-01 00:00:00,2020-01-01 00:00:00,60,9,75,74.00763888888889,Horizon_BCBS:  PHM clm_head read in as 20 and correct custom field in IPRO with clm_source concat clm_head (only CLM_HEAD in Custom Field),Released,Sue Szubzda
+721,US657787,2020-06-09 00:37:00,2020-09-14 08:00:00,2020-06-01 00:00:00,2020-01-01 00:00:00,30,5,120,97.30763888888889,Vera II 7.2migration,Released,Pragada Kumar
+13,US658684,2020-06-10 09:50:00,2020-09-14 01:58:00,2020-06-01 00:00:00,2020-01-01 00:00:00,45,5,120,95.67222222222222,Common: IMAP_TOS_PROC missing some RB codes,Dev,Padmaja Gandhi
+722,US662123,2020-06-17 11:30:00,2020-10-13 14:00:00,2020-06-01 00:00:00,2020-01-01 00:00:00,15,1,120,118.10416666666667,Tufts_II: Needs to use the optional upd_dates Override for update_clm.,Released,Lois Nordstrom
+723,US662162,2020-06-17 12:58:00,2020-08-18 06:50:00,2020-06-01 00:00:00,2020-01-01 00:00:00,60,9,75,61.74444444444445,Canopy:  Update DW Invoke elg_qa to point to standard common elg_qa vs DCM OPA elg_qa.,Released,Sue Szubzda
+14,US663394,2020-06-19 08:12:00,2020-07-22 11:22:00,2020-06-01 00:00:00,2020-01-01 00:00:00,90,12,45,33.13194444444444,Tufts - Add a new custom field on the claim record which would identify if the claim is related to COVID,Dev,Tricia Huebner
+15,US664361,2020-06-23 08:52:00,2020-10-01 12:27:00,2020-06-01 00:00:00,2020-01-01 00:00:00,15,2,120,100.14930555555556,IPro 12.0 Input Changes,Dev,Tricia Huebner
+724,US665162,2020-06-25 00:36:00,2020-09-14 08:05:00,2020-06-01 00:00:00,2020-01-01 00:00:00,30,5,90,81.31180555555555,Mercy OPA : II 72 migration,Released,Padmaja Gandhi
+725,US665165,2020-06-25 00:39:00,2020-09-28 00:00:00,2020-06-01 00:00:00,2020-01-01 00:00:00,30,3,120,94.97291666666666,UCDavis : II 72 migration,Released,Pragada Kumar
+726,US665166,2020-06-25 00:39:00,2020-09-21 07:43:00,2020-06-01 00:00:00,2020-01-01 00:00:00,30,4,90,88.29444444444445,Reliant : II 72 migration,Released,Pragada Kumar
+727,US665882,2020-06-25 09:21:00,2020-07-27 11:56:00,2020-06-01 00:00:00,2020-01-01 00:00:00,90,12,45,32.107638888888886,Tufts_II Facility Attribution Table Name Change,Released,Tricia Huebner
+728,US666242,2020-06-26 07:24:00,2020-07-22 12:18:00,2020-06-01 00:00:00,2020-01-01 00:00:00,90,12,30,26.204166666666666,Vera: Review layouts for new data sources/gap analysis,Released,Tricia Huebner
+729,US666804,2020-06-29 08:37:00,2020-10-06 07:44:00,2020-06-01 00:00:00,2020-01-01 00:00:00,15,2,120,98.96319444444444,DRG Process Refactor: Functional Specifications,Released,Sue Szubzda
+16,US669330,2020-07-07 05:21:00,2020-09-14 01:56:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,5,75,68.85763888888889,LOINC Code Table,Dev,Pragada Kumar
+756,US670937,2020-07-10 15:21:00,2020-10-07 09:45:00,2020-07-01 00:00:00,2020-01-01 00:00:00,15,1,90,88.76666666666667,UHC C&S  - AMC - BH Map Application,Requests,Sue Szubzda
+730,US671561,2020-07-14 09:00:00,2020-08-18 06:50:00,2020-07-01 00:00:00,2020-01-01 00:00:00,60,9,45,34.90972222222222,UHC C&S IPRO PCR - Supplemental File additional fields,Released,Sue Szubzda
+731,US672721,2020-07-16 16:03:00,2020-09-04 09:34:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,6,60,49.72986111111111,Keck map the provider specialty from the provider  table instead of using the provider specialty from the incoming claim,Released,Lois Nordstrom
+5,US672728,2020-07-16 16:14:00,2020-09-02 09:03:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,6,60,47.700694444444444,H704847_NYU Null CPT modifiers in L2_II_SERVICES_MED,Code Complete,Tricia Huebner
+732,US672853,2020-07-17 06:22:00,2020-08-18 06:52:00,2020-07-01 00:00:00,2020-01-01 00:00:00,60,9,45,32.020833333333336,Baycare DRG Invoke update,Released,Sue Szubzda
+733,US672855,2020-07-17 06:29:00,2020-09-11 13:03:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,5,60,56.27361111111111,Migration 721 CLients DRG Invoke Review,Released,Sue Szubzda
+734,US673476,2020-07-20 07:35:00,2020-10-06 07:44:00,2020-07-01 00:00:00,2020-01-01 00:00:00,15,2,90,78.00625,Lehigh_OPA: Upload Failure INC16950850,Released,Christopher Amendola
+735,US673695,2020-07-20 13:40:00,2020-08-31 12:30:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,7,45,41.951388888888886,Tufts_II:  Need to rerun medical only for PD20200630 cycle for IDB,Released,Lois Nordstrom
+17,US673694,2020-07-20 13:40:00,2020-08-31 12:36:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,7,45,41.955555555555556,Common Maps: Bill Type updates,Dev,Lois Nordstrom
+736,US673715,2020-07-20 14:52:00,2020-07-22 12:24:00,2020-07-01 00:00:00,2020-01-01 00:00:00,90,12,15,1.8972222222222221,Fullwell: Update LABDATA Units (INC16963555),Released,Christopher Amendola
+18,US673860,2020-07-21 07:01:00,2020-09-14 01:53:00,2020-07-01 00:00:00,2020-01-01 00:00:00,45,5,60,54.78611111111111,II 8.0 common changes,Dev,Padmaja Gandhi
+737,US674922,2020-07-24 07:13:00,2020-10-06 07:44:00,2020-07-01 00:00:00,2020-01-01 00:00:00,15,2,75,74.02152777777778,Empire VBR - Pseudo Claims Correct Text file and Update Copy_raw - remove pseudo_m,Released,Sue Szubzda
+738,US676166,2020-07-29 07:14:00,2020-08-20 12:09:00,2020-07-01 00:00:00,2020-01-01 00:00:00,60,8,30,22.20486111111111,Canopy  - canopy_sql_update_lab_units,Released,Christopher Amendola
+739,US676434,2020-07-29 13:55:00,2020-08-04 10:03:00,2020-07-01 00:00:00,2020-01-01 00:00:00,75,11,15,5.838888888888889,Vera - new data source (Driscoll),Released,Tricia Huebner
+3,US676595,2020-07-30 06:19:00,2020-08-25 11:41:00,2020-07-01 00:00:00,2020-01-01 00:00:00,60,8,30,26.22361111111111,UHC C&S: New Extract Scripts,Approval,Christopher Amendola
+777,US677264,2020-08-03 05:28:00,2020-09-29 00:57:00,2020-08-01 00:00:00,2020-01-01 00:00:00,30,3,60,56.81180555555556,OhioHealth : II 72 migration,UAT,Pragada Kumar
+19,US677764,2020-08-04 10:04:00,2020-08-04 10:09:00,2020-08-01 00:00:00,2020-01-01 00:00:00,75,11,15,0.003472222222222222,Centura - add new data source (Town of Breckenridge),Dev,Tricia Huebner
+740,US677922,2020-08-04 15:08:00,2020-08-20 12:09:00,2020-08-01 00:00:00,2020-01-01 00:00:00,60,8,30,15.875694444444445,Opswise Prep for Next wave of OPA Clients,Released,Christopher Amendola
+741,US678327,2020-08-05 12:14:00,2020-08-31 12:30:00,2020-08-01 00:00:00,2020-01-01 00:00:00,45,7,30,26.011111111111113,BCBSMA: IDB data contributor. Changing claims to a new system. Test to make sure we can read in new data pull,Released,Lois Nordstrom
+6,US679260,2020-08-07 10:55:00,2020-09-02 09:05:00,2020-08-01 00:00:00,2020-01-01 00:00:00,45,6,30,25.92361111111111,NYU - Healthfirst Non-Par,Code Complete,Tricia Huebner
+757,US679277,2020-08-07 11:38:00,2020-09-10 10:09:00,2020-08-01 00:00:00,2020-01-01 00:00:00,45,5,45,33.93819444444444,H642453 Vera New Source Implementation Tasks:  Hidalgo County (Aetna is TPA),Requests,Tricia Huebner
+778,US679894,2020-08-11 07:26:00,2020-09-01 07:11:00,2020-08-01 00:00:00,2020-01-01 00:00:00,45,7,30,20.989583333333332,Tufts_II Watch special rollback directory for Paid through August,UAT,Christopher Amendola
+758,US683049,2020-08-19 14:28:00,2020-10-06 08:28:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,2,60,47.75,Horizon BCBS - New lab vendors/new extracts,Requests,Sue Szubzda
+20,US683081,2020-08-19 15:59:00,2020-10-08 06:35:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,1,60,49.608333333333334,UHC C&S: New fields to the C&S IPRO member file,Dev,Sue Szubzda
+759,US683246,2020-08-20 07:06:00,2020-10-13 07:22:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,1,60,54.01111111111111,COMMON:  Common_span_elg_dw Research LOB_SEV,Requests,Padmaja Gandhi
+21,US684065,2020-08-24 10:14:00,2020-08-24 10:20:00,2020-08-01 00:00:00,2020-01-01 00:00:00,60,8,15,0.004166666666666667,Common: 2020 II Benchmarks,Dev,Lois Nordstrom
+742,US684570,2020-08-25 11:41:00,2020-10-08 07:09:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,1,45,43.81111111111111,"USB: Expand to 24 Months of Data Claims and Eligibility, and account field change to GROUP_NUM",Released,Sue Szubzda
+4,US684584,2020-08-25 11:53:00,2020-10-13 06:31:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,1,60,48.77638888888889,Keck II-imputed PCP Configuration and potential logic changes (SF # 00035534),Approval,Sue Szubzda
+743,US684839,2020-08-26 03:00:00,2020-08-26 04:40:00,2020-08-01 00:00:00,2020-01-01 00:00:00,60,8,15,0.06944444444444445,Remove Character - USB_usb_customer_segment,Released,Phanikumar Jetti
+22,US684932,2020-08-26 07:36:00,2020-10-05 14:06:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,2,45,40.270833333333336,$PROCTOS  Format Issue,Dev,Lois Nordstrom
+23,US686025,2020-08-28 07:33:00,2020-10-13 07:23:00,2020-08-01 00:00:00,2020-01-01 00:00:00,15,1,60,45.99305555555556,COMMON: Span_elg - overlap override code review,Dev,Padmaja Gandhi
+744,US686824,2020-08-31 12:31:00,2020-09-04 09:34:00,2020-08-01 00:00:00,2020-01-01 00:00:00,45,6,15,3.877083333333333,Common: Run IDB PULL for Data contributor Canopy,Released,Lois Nordstrom
+784,US689289,2020-09-08 05:11:00,2020-09-24 00:53:00,2020-09-01 00:00:00,2020-01-01 00:00:00,30,3,30,15.820833333333333,Review H772/Palmetto Edited Provider File and Deploy,Validation,Pragada Kumar
+745,US689358,2020-09-08 07:38:00,2020-10-06 07:43:00,2020-09-01 00:00:00,2020-01-01 00:00:00,15,2,30,28.00347222222222,"Common:  Member_match attrib update for zip, frst_nam, last_nam when matching plans",Released,Sue Szubzda
+779,US689647,2020-09-08 12:29:00,2020-09-08 12:39:00,2020-09-01 00:00:00,2020-01-01 00:00:00,45,6,15,0.006944444444444444,ProHealth: File Rename Update,UAT,Christopher Amendola
+760,US690611,2020-09-10 10:10:00,2020-09-10 10:53:00,2020-09-01 00:00:00,2020-01-01 00:00:00,45,5,15,0.029861111111111113,H642453 Vera New Source Implementation Tasks: SPPT (Zenith),Requests,Tricia Huebner
+761,US690612,2020-09-10 10:10:00,2020-09-10 11:20:00,2020-09-01 00:00:00,2020-01-01 00:00:00,45,5,15,0.04861111111111111,"H642453 Vera New Source Implementation Tasks: Baylor (UHC – Med claims, Rx – CVS)",Requests,Tricia Huebner
+780,US691773,2020-09-15 08:08:00,2020-10-14 12:42:00,2020-09-01 00:00:00,2020-01-01 00:00:00,15,1,30,29.190277777777776,ProHealth: Extract Control Report,UAT,Sue Szubzda
+24,US692365,2020-09-16 07:24:00,2020-09-24 00:54:00,2020-09-01 00:00:00,2020-01-01 00:00:00,30,3,15,7.729166666666667,Common: Set provider name to provider ID in provider file when provider name is blank,Dev,Padmaja Gandhi
+746,US694668,2020-09-23 09:44:00,2020-10-02 10:55:00,2020-09-01 00:00:00,2020-01-01 00:00:00,15,2,15,9.049305555555556,BCBSNC: Modify Maternity DRG,Released,
+25,US696753,2020-09-30 07:34:00,2020-10-02 10:54:00,2020-09-01 00:00:00,2020-01-01 00:00:00,15,2,15,2.138888888888889,H406 II-Imputed PCP solution for ETL,Dev,Christopher Amendola
+762,US697779,2020-10-02 11:31:00,2020-10-02 15:05:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,2,15,0.1486111111111111,BCBSNC - Pharmacy Carve outs - PBM (Epic/Multi),Requests,
+781,US697894,2020-10-02 15:05:00,2020-10-06 08:30:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,2,15,3.7256944444444446,COMMON:  II PRE-PE DRG Grouper Bug: Gender Field Incorrect Potentially (INC18154709),UAT,Sue Szubzda
+763,US698275,2020-10-05 16:07:00,2020-10-05 16:12:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,2,15,0.003472222222222222,COMMON:  II DRG GROUPER Annual Update to v38,Requests,Sue Szubzda
+764,US699167,2020-10-07 14:21:00,2020-10-07 14:24:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,0.0020833333333333333,VWH Source: Premera Elg file,Requests,
+747,US699583,2020-10-08 10:51:00,2020-10-13 14:00:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,5.13125,Tufts_II: Add opt_abort_override_pseudo_m to DW module invoke.,Released,Lois Nordstrom
+748,US699971,2020-10-09 14:58:00,2020-10-13 14:00:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,3.959722222222222,Dean: Add opt_upd_dates_override for medt and phmt,Released,Lois Nordstrom
+26,US700202,2020-10-12 08:59:00,2020-10-13 14:06:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,1.2131944444444445,Common: Update_CLM - update new report 6 to only create if have prior cycle summary files.,Dev,Lois Nordstrom
+782,US700811,2020-10-13 12:48:00,2020-10-13 15:15:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,0.10208333333333333,UHC C&S (Americhoice) IPro Config Doc - Request to complete for IPro 11.`,UAT,Sue Szubzda
+765,US701190,2020-10-14 09:38:00,2020-10-14 09:38:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,0.0,(Copy of) Blank User Story,Requests,
+27,US701191,2020-10-14 09:39:00,2020-10-14 09:58:00,2020-10-01 00:00:00,2020-01-01 00:00:00,15,1,15,0.013194444444444444,USB: ETL Review for CPT4 & Revenue Code Logic,Dev,Sue Szubzda
+</div>
+    </body>
+</html>

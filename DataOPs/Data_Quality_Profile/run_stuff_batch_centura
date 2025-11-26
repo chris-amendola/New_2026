@@ -1,0 +1,86 @@
+cd \\tsclient\H\Data_Quality_Profile
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDAET% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDANT% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDBRI% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDBRM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDCDP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDHUM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDUHA% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDUHC% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMAET% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMANT% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMBRI% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMBRM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMCDP% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMHUM% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMUHA% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMUHC% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgAET_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgANT_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgBRI_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgBRM_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgCDP_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgHUM_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgUHA_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Volume.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_elgUHC_span --by_var_list PLAN_SOURCE --span_table True
+
+#FREQS
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDAET% --by_var_list PLAN_SOURCE
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDANT% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDBRI% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDBRM% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDCDP% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDHUM% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDUHA% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_MEDUHC% --by_var_list PLAN_SOURCE
+
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMAET% --by_var_list PLAN_SOURCE  
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMANT% --by_var_list PLAN_SOURCE  
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMBRI% --by_var_list PLAN_SOURCE  
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMBRM% --by_var_list PLAN_SOURCE  
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMCDP% --by_var_list PLAN_SOURCE  
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMHUM% --by_var_list PLAN_SOURCE 
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMUHA% --by_var_list PLAN_SOURCE  
+
+python .\Provider_DataOPs_Field.py --client_name Fullwell --cycle 20210228 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive M --dataset FUL_CUR_PHMUHC% --by_var_list PLAN_SOURCE 

@@ -1,0 +1,98 @@
+                                                                 The SAS System                            10:49 Thursday, September 10, 2020   1
+
+                                                       plan_
+                                                Obs    source    variable       value           freq
+
+                                                  1     ANT      clm_source     ANT           187939
+                                                  2     HBG      clm_source     HBG           448875
+                                                  3     CMS      clm_source     PART D       9461416
+                                                  4     ANT      plan_source    ANT           187939
+                                                  5     CMS      plan_source    CMS          9461416
+                                                  6     HBG      plan_source    HBG           448875
+                                                  7     ANT      covclass       MED           187939
+                                                  8     CMS      covclass       MED          9461416
+                                                  9     HBG      covclass       MED           448875
+                                                 10     CMS      dea_num        Missing      9461416
+                                                 11     HBG      dea_num        Missing         3638
+                                                 12     ANT      dea_num        !00000451          1
+                                                 13     ANT      dea_num        !00000679          9
+                                                 14     ANT      dea_num        !00001534         14
+                                                 15     ANT      dea_num        !00001646         61
+                                                 16     ANT      dea_num        !00001694          3
+                                                 17     ANT      dea_num        !00001839         34
+                                                 18     ANT      dea_num        !00001984         18
+                                                 19     ANT      dea_num        !00011806          6
+                                                 20     ANT      dea_num        18368              1
+                                                 21     ANT      dea_num        37572              2
+                                                 22     ANT      dea_num        38445              1
+                                                 23     ANT      dea_num        40870              1
+                                                 24     ANT      dea_num        45954              1
+                                                 25     ANT      dea_num        47115              2
+                                                                 The SAS System                            10:49 Thursday, September 10, 2020   2
+
+                                                             The CONTENTS Procedure
+
+                                Data Set Name        WORK.PHM_FIELDS               Observations           148046
+                                Member Type          DATA                          Variables              4     
+                                Engine               V9                            Indexes                0     
+                                Created              09/10/2020 10:51:07           Observation Length     92    
+                                Last Modified        09/10/2020 10:51:07           Deleted Observations   0     
+                                Protection                                         Compressed             CHAR  
+                                Data Set Type                                      Reuse Space            NO    
+                                Label                                              Point to Observations  YES   
+                                Data Representation  WINDOWS_64                    Sorted                 NO    
+                                Encoding             wlatin1  Western (Windows)                                 
+
+
+                                                        Engine/Host Dependent Information
+
+                             Data Set Page Size          32768                                                      
+                             Number of Data Set Pages    190                                                        
+                             Number of Data Set Repairs  0                                                          
+                             ExtendObsCounter            YES                                                        
+                             Filename                    F:\saswork\camendol\_TD45280_APSWP2286_\phm_fields.sas7bdat
+                             Release Created             9.0401M6                                                   
+                             Host Created                X64_SRV16                                                  
+                             Owner Name                  IHCIS\camendol                                             
+                             File Size                   6MB                                                        
+                             File Size (bytes)           6258688                                                    
+
+
+                                                   Alphabetic List of Variables and Attributes
+ 
+                                                   #    Variable       Type    Len    Informat
+
+                                                   4    freq           Num       8            
+                                                   1    plan_source    Char     15    $CHAR15.
+                                                   3    value          Char     50            
+                                                   2    variable       Char     19            
+                                                                 The SAS System                            10:49 Thursday, September 10, 2020   3
+
+                                                      plan_
+                                               Obs    source     variable      value              freq
+
+                                                 1     ANT      plan_source    ANT             2059945
+                                                 2     CMS      plan_source    CMS            35237135
+                                                 3     HBG      plan_source    HBG              167126
+                                                 4     ANT      bill_prv       Missing          181418
+                                                 5     CMS      bill_prv       Missing        35237135
+                                                 6     HBG      bill_prv       Missing             180
+                                                 7     ANT      bill_prv       !0000002178          19
+                                                 8     ANT      bill_prv       !0000002663          63
+                                                 9     ANT      bill_prv       !0000004372          69
+                                                10     ANT      bill_prv       !0000007057           4
+                                                11     ANT      bill_prv       !0000009404           9
+                                                12     ANT      bill_prv       !0000009560           1
+                                                13     ANT      bill_prv       !0000009796           2
+                                                14     ANT      bill_prv       !0000011325         129
+                                                15     ANT      bill_prv       !0000018480           4
+                                                16     ANT      bill_prv       !0000018781          17
+                                                17     ANT      bill_prv       !0000022050           4
+                                                18     ANT      bill_prv       !0000031647           9
+                                                19     ANT      bill_prv       !0000039286           7
+                                                20     ANT      bill_prv       !0000053457          63
+                                                21     ANT      bill_prv       !0000098431           1
+                                                22     ANT      bill_prv       !0000100442          24
+                                                23     ANT      bill_prv       !0000110402          15
+                                                24     ANT      bill_prv       !0000111006          26
+                                                25     ANT      bill_prv       !0000126271           2

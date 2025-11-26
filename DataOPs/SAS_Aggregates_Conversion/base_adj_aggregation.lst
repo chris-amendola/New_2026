@@ -1,0 +1,106 @@
+                                                                 The SAS System                                21:40 Wednesday, April 7, 2021   1
+
+                            adj_     adj_     adj_     numrows_    members_      amt_pay_      amt_req_    amt_eqv_    met_qty_
+      Obs    Mon     Yr     stat1    stat2    stat3       sum         sum             sum           sum       sum         sum      contract
+
+        1     1     2018      0        0        0          812        374       480999.83     529576.16        812       56685       HUM   
+        2     1     2018      B        D        B        12790       1541           -0.00         -0.00          0      947492       HUM   
+        3     1     2018      B        D        M          536         19            0.00          0.00          0       23930       HUM   
+        4     1     2018      B        D        O          396         66           -0.00          0.00          0       36920       HUM   
+        5     1     2018      B        D        P          128         21           -0.00          0.00          0        7652       HUM   
+        6     1     2018      B        D        R         3214        624           -0.00          0.00          0      214966       HUM   
+        7     1     2018      B        D        X         1820        209           -0.00         -0.00          0      115118       HUM   
+        8     1     2018      N        D        M           49         20      -128157.81    -499452.36        -49        3576       HUM   
+        9     1     2018      N        D        O          179        105       -15288.01     -37848.12       -179       14137       HUM   
+       10     1     2018      N        D        X          847        388       -97028.69    -303212.37       -847       58788       HUM   
+       11     1     2018      P        K                  5005       1793       200568.18     315000.95       5005      362289       HUM   
+       12     1     2018      P        K        M            3          3         1671.88       1676.83          3         580       HUM   
+       13     1     2018      P        K        P         2660        671          124.39      80966.56       2660      177462       HUM   
+       14     1     2018      P        K        R         1389        624        90045.62     115434.66       1389       91433       HUM   
+       15     1     2018      P        K        X           57         40         6959.50      21912.77         57        3569       HUM   
+       16     2     2018      0        0        0          972        427       532660.84     569800.80        972       66078       HUM   
+       17     2     2018      B        D        B         4954        880            0.00          0.00          0      372246       HUM   
+       18     2     2018      B        D        M         1510         25            0.00          0.00          0      102586       HUM   
+       19     2     2018      B        D        P           12          3            0.00          0.00          0         352       HUM   
+       20     2     2018      B        D        R          628        116           -0.00         -0.00          0       55476       HUM   
+       21     2     2018      B        D        X         1722         69            0.00         -0.00          0      113320       HUM   
+       22     2     2018      N        D        M          135         26      -122413.80    -443560.26       -135       10486       HUM   
+       23     2     2018      N        D        X          935        410      -137080.89    -348327.72       -935       62650       HUM   
+       24     2     2018      P        K                  6433       2151       261156.19     370868.13       6433      482441       HUM   
+       25     2     2018      P        K        M            8          5          318.37        318.37          8         796       HUM   
+                                                                 The SAS System                                21:40 Wednesday, April 7, 2021   2
+
+                                                             The CONTENTS Procedure
+
+                                 Data Set Name        WORK.SERVICERX                Observations           549 
+                                 Member Type          DATA                          Variables              12  
+                                 Engine               V9                            Indexes                0   
+                                 Created              04/07/2021 21:41:15           Observation Length     72  
+                                 Last Modified        04/07/2021 21:41:15           Deleted Observations   0   
+                                 Protection                                         Compressed             CHAR
+                                 Data Set Type                                      Reuse Space            NO  
+                                 Label                                              Point to Observations  YES 
+                                 Data Representation  WINDOWS_64                    Sorted                 NO  
+                                 Encoding             wlatin1  Western (Windows)                               
+
+
+                                                       Engine/Host Dependent Information
+
+                             Data Set Page Size          32768                                                     
+                             Number of Data Set Pages    2                                                         
+                             Number of Data Set Repairs  0                                                         
+                             ExtendObsCounter            YES                                                       
+                             Filename                    F:\saswork\camendol\_TD45932_APSWP2286_\servicerx.sas7bdat
+                             Release Created             9.0401M6                                                  
+                             Host Created                X64_SRV16                                                 
+                             Owner Name                  DMZMGMT\camendol                                          
+                             File Size                   96KB                                                      
+                             File Size (bytes)           98304                                                     
+
+
+                                                   Alphabetic List of Variables and Attributes
+ 
+                                                         #    Variable       Type    Len
+
+                                                         1    Mon            Char      2
+                                                         2    Yr             Char      4
+                                                         3    adj_stat1      Char      1
+                                                         4    adj_stat2      Char      1
+                                                         5    adj_stat3      Char      1
+                                                        10    amt_eqv_sum    Num       8
+                                                         8    amt_pay_sum    Num       8
+                                                         9    amt_req_sum    Num       8
+                                                        12    contract       Char     15
+                                                         7    members_sum    Num       8
+                                                        11    met_qty_sum    Num       8
+                                                         6    numrows_sum    Num       8
+                                                                 The SAS System                                21:40 Wednesday, April 7, 2021   3
+
+                         adj_     adj_     adj_     numrows_    members_                                   amt_eqv_
+   Obs    Mon     Yr     stat1    stat2    stat3       sum         sum      amt_pay_sum     amt_req_sum       sum         qty_sum    contract
+
+     1     1     2018      B        D        B         5306        851            -0.00            0.00          0        9596.60      HUM   
+     2     1     2018      B        D        M           48         10            -0.00            0.00          0          22.00      HUM   
+     3     1     2018      B        D        O           40          9             0.00            0.00          0          36.00      HUM   
+     4     1     2018      B        D        P          510         92             0.00            0.00          0         202.00      HUM   
+     5     1     2018      B        D        R         2938        352             0.00            0.00          0        2930.80      HUM   
+     6     1     2018      B        D        X           96         22             0.00            0.00          0          90.00      HUM   
+     7     1     2018      N        D        M          114         53        -67144.37      -182637.22       -114        -526.00      HUM   
+     8     1     2018      N        D        O           79         46       -103478.21      -112227.64        -79          62.90      HUM   
+     9     1     2018      N        D        X           42         26         -8225.41       -20798.23        -42         -58.00      HUM   
+    10     1     2018      P        K                 20250       2433       2114855.07     12664460.32      20250       83152.60      HUM   
+    11     1     2018      P        K        M          252         53        110583.24       357437.85        252         968.00      HUM   
+    12     1     2018      P        K        P         8246        697        638500.38      8587230.47       8246      165794.00      HUM   
+    13     1     2018      P        K        R         1417        352        328711.23      2518674.77       1417       17194.80      HUM   
+    14     1     2018      P        K        X           42         26          7522.51        20798.23         42          58.00      HUM   
+    15     2     2018      B        D        B         1002        142             0.00           -0.00          0         774.20      HUM   
+    16     2     2018      B        D        M           62          8            -0.00           -0.00          0         -78.00      HUM   
+    17     2     2018      B        D        O            2          1             0.00            0.00          0           2.00      HUM   
+    18     2     2018      B        D        P          722         75             0.00            0.00          0         124.00      HUM   
+    19     2     2018      B        D        R         1832        221            -0.00           -0.00          0        1058.40      HUM   
+    20     2     2018      B        D        X           10          4            -0.00            0.00          0           2.00      HUM   
+    21     2     2018      N        D        M          164         53        -39195.45      -212846.07       -164        -966.00      HUM   
+    22     2     2018      N        D        O            1          1             0.00        -1470.15         -1          -1.00      HUM   
+    23     2     2018      N        D        X           65         20         -8221.56       -46526.58        -65        -295.00      HUM   
+    24     2     2018      P        K                 20776       2462       2105082.68     13002355.40      20776       86668.70      HUM   
+    25     2     2018      P        K        M          352         53         95327.48       421559.19        352        1921.00      HUM   

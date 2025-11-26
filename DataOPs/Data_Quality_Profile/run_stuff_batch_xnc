@@ -1,0 +1,14 @@
+cd \\tsclient\H\Data_Quality_Profile
+
+python .\Provider_Dataops_Volume.py --client_name BCBSNC --cycle 20210331 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive Q --dataset xnc_cur_med_% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False
+
+python .\Provider_Dataops_Volume.py --client_name BCBSNC --cycle 20210331 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive Q --dataset xnc_cur_phm_% --by_var_list PLAN_SOURCE --time_sum_col serv_dt --span_table False --sum_by amt_pay amt_req amt_all met_qty
+
+python .\Provider_Dataops_Volume.py --client_name BCBSNC --cycle 20210331 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive Q --dataset xnc_cur_elg_span --by_var_list PLAN_SOURCE --span_table True
+
+python .\Provider_DataOPs_Field.py --client_name BCBSNC --cycle 20210331 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive Q --dataset xnc_cur_med_% --by_var_list map_source
+
+python .\Provider_DataOPs_Field.py --client_name BCBSNC --cycle 20210331 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive Q --dataset xnc_cur_phm_% --by_var_list map_source 
+
+
+#MCA DATA

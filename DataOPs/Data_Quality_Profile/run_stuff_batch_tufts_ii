@@ -1,0 +1,3 @@
+cd \\tsclient\H\Data_Quality_Profile
+
+python .\Provider_DataOPs_Field.py --client_name Tufts_II --cycle 20210531 --output_dir W:\camendol\SPC\data\ --sas_server apswp2287 --sas_drive H --dataset "THP_CUR_ELG_SPAN" --by_var_list map_source
