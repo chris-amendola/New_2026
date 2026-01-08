@@ -1,0 +1,1 @@
+Refresh and update of my efforts to bring 'statistical process control' concepts, if not practices to at-scale data pipelines.
