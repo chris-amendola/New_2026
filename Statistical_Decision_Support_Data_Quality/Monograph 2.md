@@ -33,7 +33,7 @@ However, healthcare data often violates assumptions underlying traditional SPC m
 
 The most fundamental monitoring metric is the number of records loaded. For healthcare data warehouses, this might represent claims, encounters, laboratory results, or any other transactional data. The appropriate control chart depends on the characteristics of the count data.
 
-**Shewhart X-bar and R Charts**: When record counts are approximately normally distributed with constant variance, traditional X-bar charts effectively monitor the mean while R (range) charts monitor variability. Using historical data, we calculate the process mean (x̄) and average range (R̄), then establish control limits at ±3 standard deviations. For data warehouse loads, control limits are typically calculated as:
+**Shewhart X-bar and R Charts**: When record counts are approximately normally distributed with constant variance, traditional X-bar charts effectively monitor the mean while R (range) charts monitor variability. Using historical data, we calculate the process mean (x̄) and average range (R̄), then establish control limits at ±3 standard deviations. For data warehouse loads, control limits are t ypically calculated as:
 
 Upper Control Limit (UCL) = x̄ + 3(R̄/d₂) Lower Control Limit (LCL) = x̄ - 3(R̄/d₂)
 
