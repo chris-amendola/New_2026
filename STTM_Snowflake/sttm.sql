@@ -164,6 +164,8 @@ $$
     var len2 = s2.length;
     
     var maxDist = Math.floor(Math.max(len1, len2) / 2) - 1;
+    if (maxDist < 0) maxDist = 0;
+    
     var matches = 0;
     var transpositions = 0;
     var s1Matches = new Array(len1).fill(false);
@@ -221,6 +223,9 @@ $$
     
     var len1 = s1.length;
     var len2 = s2.length;
+    
+    if (len1 === 0) return len2 === 0 ? 1.0 : 0.0;
+    if (len2 === 0) return 0.0;
     
     var matrix = [];
     
@@ -348,7 +353,7 @@ $$
     });
     var fuzzyRs = fuzzyStmt.execute();
     if (fuzzyRs.next()) {
-        scores.fuzzy = fuzzyRs.getColumnValue(1);
+        scores.fuzzy = fuzzyRs.getColumnValue(1) || 0;
     }
     
     // Token-based matching
@@ -367,9 +372,9 @@ $$
     });
     var tokenRs = tokenStmt.execute();
     if (tokenRs.next()) {
-        var srcCnt = tokenRs.getColumnValue(1);
-        var tgtCnt = tokenRs.getColumnValue(2);
-        var matchCnt = tokenRs.getColumnValue(3);
+        var srcCnt = tokenRs.getColumnValue(1) || 0;
+        var tgtCnt = tokenRs.getColumnValue(2) || 0;
+        var matchCnt = tokenRs.getColumnValue(3) || 0;
         if (srcCnt > 0 && tgtCnt > 0) {
             scores.token = (2 * matchCnt) / (srcCnt + tgtCnt);
         }
@@ -411,33 +416,45 @@ $$
     });
     var synonymRs = synonymStmt.execute();
     if (synonymRs.next()) {
-        var srcCnt = synonymRs.getColumnValue(1);
-        var tgtCnt = synonymRs.getColumnValue(2);
-        var matchCnt = synonymRs.getColumnValue(3);
+        var srcCnt = synonymRs.getColumnValue(1) || 0;
+        var tgtCnt = synonymRs.getColumnValue(2) || 0;
+        var matchCnt = synonymRs.getColumnValue(3) || 0;
         if (srcCnt > 0 && tgtCnt > 0) {
             scores.synonym = (2 * matchCnt) / (srcCnt + tgtCnt);
         }
     }
     
     // Data type compatibility
-    var typeMap = {
-        'NUMBER': ['NUMBER', 'NUMERIC', 'INTEGER', 'FLOAT', 'DECIMAL'],
-        'VARCHAR': ['VARCHAR', 'STRING', 'TEXT', 'CHAR'],
-        'DATE': ['DATE', 'TIMESTAMP', 'TIMESTAMP_NTZ', 'TIMESTAMP_LTZ', 'TIMESTAMP_TZ'],
-        'BOOLEAN': ['BOOLEAN']
+    var typeCompatibility = {
+        'NUMBER': ['NUMBER', 'NUMERIC', 'INTEGER', 'FLOAT', 'DECIMAL', 'INT', 'BIGINT', 'SMALLINT', 'TINYINT', 'BYTEINT'],
+        'VARCHAR': ['VARCHAR', 'STRING', 'TEXT', 'CHAR', 'CHARACTER'],
+        'DATE': ['DATE'],
+        'TIMESTAMP': ['TIMESTAMP', 'TIMESTAMP_NTZ', 'TIMESTAMP_LTZ', 'TIMESTAMP_TZ', 'DATETIME'],
+        'BOOLEAN': ['BOOLEAN', 'BOOL'],
+        'BINARY': ['BINARY', 'VARBINARY'],
+        'VARIANT': ['VARIANT', 'OBJECT', 'ARRAY']
     };
     
-    var srcBase = SOURCE_TYPE.split('(')[0].toUpperCase();
-    var tgtBase = TARGET_TYPE.split('(')[0].toUpperCase();
+    var srcBase = (SOURCE_TYPE || '').split('(')[0].toUpperCase().trim();
+    var tgtBase = (TARGET_TYPE || '').split('(')[0].toUpperCase().trim();
     
     if (srcBase === tgtBase) {
         scores.datatype = 1.0;
     } else {
-        for (var key in typeMap) {
-            if (typeMap[key].indexOf(srcBase) >= 0 && typeMap[key].indexOf(tgtBase) >= 0) {
+        // Check compatibility groups
+        for (var key in typeCompatibility) {
+            var types = typeCompatibility[key];
+            var srcInGroup = types.indexOf(srcBase) >= 0;
+            var tgtInGroup = types.indexOf(tgtBase) >= 0;
+            if (srcInGroup && tgtInGroup) {
                 scores.datatype = 0.8;
                 break;
             }
+        }
+        // Special case: DATE and TIMESTAMP are somewhat compatible
+        if ((srcBase === 'DATE' && tgtBase.indexOf('TIMESTAMP') >= 0) ||
+            (srcBase.indexOf('TIMESTAMP') >= 0 && tgtBase === 'DATE')) {
+            scores.datatype = 0.6;
         }
     }
     
@@ -458,7 +475,7 @@ $$
         weights['WEIGHT_SYNONYM_MATCH'] +
         weights['WEIGHT_DATATYPE_MATCH'];
     
-    var finalScore = totalScore / totalWeight;
+    var finalScore = totalWeight > 0 ? totalScore / totalWeight : 0;
     
     return {
         confidence_score: finalScore,
@@ -483,360 +500,195 @@ AS
 $$
     var transformations = [];
     
-    var srcType = SOURCE_TYPE.toUpperCase().split('(')[0];
-    var tgtType = TARGET_TYPE.toUpperCase().split('(')[0];
+    var srcType = (SOURCE_TYPE || '').toUpperCase().split('(')[0].trim();
+    var tgtType = (TARGET_TYPE || '').toUpperCase().split('(')[0].trim();
     
     var srcCol = SOURCE_COL;
     var currentCol = srcCol;
     
     // Data type conversion
     if (srcType !== tgtType) {
-        if (tgtType === 'NUMBER' || tgtType === 'NUMERIC' || tgtType === 'INTEGER') {
+        if (tgtType === 'NUMBER' || tgtType === 'NUMERIC' || tgtType === 'INTEGER' || 
+            tgtType === 'INT' || tgtType === 'BIGINT' || tgtType === 'FLOAT' || tgtType === 'DECIMAL') {
             currentCol = 'TRY_CAST(' + currentCol + ' AS NUMBER)';
-            transformations.push('Type: VARCHAR->NUMBER');
+            transformations.push('Type: ' + srcType + '->NUMBER');
         } else if (tgtType === 'DATE') {
             currentCol = 'TRY_TO_DATE(' + currentCol + ')';
-            transformations.push('Type: ->DATE');
-        } else if (tgtType.indexOf('TIMESTAMP') >= 0) {
+            transformations.push('Type: ' + srcType + '->DATE');
+        } else if (tgtType.indexOf('TIMESTAMP') >= 0 || tgtType === 'DATETIME') {
             currentCol = 'TRY_TO_TIMESTAMP(' + currentCol + ')';
-            transformations.push('Type: ->TIMESTAMP');
-        } else if (tgtType === 'BOOLEAN') {
+            transformations.push('Type: ' + srcType + '->TIMESTAMP');
+        } else if (tgtType === 'BOOLEAN' || tgtType === 'BOOL') {
             currentCol = 'TRY_TO_BOOLEAN(' + currentCol + ')';
-            transformations.push('Type: ->BOOLEAN');
-        } else if (tgtType === 'VARCHAR' || tgtType === 'STRING') {
+            transformations.push('Type: ' + srcType + '->BOOLEAN');
+        } else if (tgtType === 'VARCHAR' || tgtType === 'STRING' || tgtType === 'TEXT') {
             currentCol = 'TO_VARCHAR(' + currentCol + ')';
-            transformations.push('Type: ->VARCHAR');
+            transformations.push('Type: ' + srcType + '->VARCHAR');
         }
     }
     
-    // Null handling
+    // Case handling for string types
+    if ((srcType === 'VARCHAR' || srcType === 'STRING' || srcType === 'TEXT' || srcType === 'CHAR') && 
+        (tgtType === 'VARCHAR' || tgtType === 'STRING' || tgtType === 'TEXT' || tgtType === 'CHAR')) {
+        
+        // Trim whitespace
+        currentCol = 'TRIM(' + currentCol + ')';
+        transformations.push('String: TRIM');
+        
+        // Analyze column name patterns for case conversion hints
+        var srcUpper = SOURCE_COL === SOURCE_COL.toUpperCase();
+        var tgtUpper = TARGET_COL === TARGET_COL.toUpperCase();
+        var srcLower = SOURCE_COL === SOURCE_COL.toLowerCase();
+        var tgtLower = TARGET_COL === TARGET_COL.toLowerCase();
+        
+        if (!srcUpper && tgtUpper) {
+            currentCol = 'UPPER(' + currentCol + ')';
+            transformations.push('Case: UPPER');
+        } else if (!srcLower && tgtLower) {
+            currentCol = 'LOWER(' + currentCol + ')';
+            transformations.push('Case: LOWER');
+        }
+    }
+    
+    // Null handling - always add COALESCE
     currentCol = 'COALESCE(' + currentCol + ', NULL)';
     transformations.push('Null: COALESCE');
     
-    // Case handling based on column name patterns
-    var srcUpper = SOURCE_COL.toUpperCase();
-    var tgtUpper = TARGET_COL.toUpperCase();
-    
-    if (srcUpper === srcUpper && tgtUpper !== tgtUpper) {
-        // Source is uppercase, target is mixed case
-        if (tgtType === 'VARCHAR' || tgtType === 'STRING') {
-            currentCol = 'INITCAP(' + currentCol + ')';
-            transformations.push('Case: INITCAP');
-        }
-    } else if (tgtUpper === tgtUpper && srcUpper !== srcUpper) {
-        // Target is uppercase
-        if (tgtType === 'VARCHAR' || tgtType === 'STRING') {
-            currentCol = 'UPPER(' + currentCol + ')';
-            transformations.push('Case: UPPER');
-        }
-    }
-    
-    // Trimming for string types
-    if ((srcType === 'VARCHAR' || srcType === 'STRING') && 
-        (tgtType === 'VARCHAR' || tgtType === 'STRING')) {
-        currentCol = 'TRIM(' + currentCol + ')';
-        transformations.push('Trim: TRIM');
-    }
-    
-    return currentCol + ' AS ' + TARGET_COL + ' -- ' + transformations.join(', ');
+    var comment = transformations.length > 0 ? ' -- ' + transformations.join(', ') : '';
+    return currentCol + ' AS ' + TARGET_COL + comment;
 $$;
 
 -- =====================================================================
 -- MAIN MAPPING PROCEDURE
 -- =====================================================================
 
-CREATE OR REPLACE PROCEDURE EXECUTE_SEMANTIC_MAPPING(
-    source_database VARCHAR,
-    source_schema VARCHAR,
-    target_database VARCHAR,
-    target_schema VARCHAR,
-    output_schema VARCHAR DEFAULT 'SEMANTIC_MAPPING'
+CREATE OR REPLACE PROCEDURE SEMANTIC_MAPPING.EXECUTE_SEMANTIC_MAPPING(
+    SOURCE_DATABASE VARCHAR,
+    SOURCE_SCHEMA VARCHAR,
+    TARGET_DATABASE VARCHAR,
+    TARGET_SCHEMA VARCHAR,
+    OUTPUT_SCHEMA VARCHAR DEFAULT 'SEMANTIC_MAPPING'
 )
 RETURNS VARCHAR
 LANGUAGE JAVASCRIPT
 AS
 $$
-    // Get configuration parameters
-    var configStmt = snowflake.createStatement({
-        sqlText: "SELECT PARAMETER_NAME, PARAMETER_VALUE FROM " + OUTPUT_SCHEMA + ".CONFIG_MATCHING_PARAMETERS"
-    });
-    var config = {};
-    var configRs = configStmt.execute();
-    while (configRs.next()) {
-        config[configRs.getColumnValue(1)] = configRs.getColumnValue(2);
-    }
-    
-    var matchingMethod = config['MATCHING_METHOD'];
-    var confidenceThreshold = parseFloat(config['CONFIDENCE_THRESHOLD']);
-    var topN = parseInt(config['TOP_N_MATCHES']);
-    
-    // Clear previous results
-    snowflake.execute({sqlText: "TRUNCATE TABLE " + OUTPUT_SCHEMA + ".MAPPING_RESULTS"});
-    snowflake.execute({sqlText: "TRUNCATE TABLE " + OUTPUT_SCHEMA + ".UNMAPPED_COLUMNS"});
-    
-    // Get exclusion patterns
-    var exclusions = {schemas: [], tables: []};
-    var exclStmt = snowflake.createStatement({
-        sqlText: "SELECT EXCLUSION_TYPE, EXCLUSION_PATTERN FROM " + OUTPUT_SCHEMA + ".CONFIG_EXCLUSIONS"
-    });
-    var exclRs = exclStmt.execute();
-    while (exclRs.next()) {
-        var type = exclRs.getColumnValue(1);
-        var pattern = exclRs.getColumnValue(2);
-        if (type === 'SCHEMA') exclusions.schemas.push(pattern);
-        if (type === 'TABLE') exclusions.tables.push(pattern);
-    }
-    
-    if (matchingMethod === 'CORTEX_LLM') {
-        // Cortex LLM-based matching
-        var cortexSql = `
-            INSERT INTO ${OUTPUT_SCHEMA}.MAPPING_RESULTS (
-                SOURCE_DATABASE, SOURCE_SCHEMA, SOURCE_TABLE, SOURCE_COLUMN, SOURCE_DATA_TYPE,
-                TARGET_DATABASE, TARGET_SCHEMA, TARGET_TABLE, TARGET_COLUMN, TARGET_DATA_TYPE,
-                CONFIDENCE_SCORE, MATCH_RANK, TRANSFORMATION_SQL, MATCHING_METHOD, MATCH_DETAILS
-            )
-            WITH source_cols AS (
-                SELECT 
-                    TABLE_CATALOG AS db,
-                    TABLE_SCHEMA AS schema,
-                    TABLE_NAME AS table,
-                    COLUMN_NAME AS column,
-                    DATA_TYPE AS data_type,
-                    ORDINAL_POSITION
-                FROM ${SOURCE_DATABASE}.INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = '${SOURCE_SCHEMA}'
-            ),
-            target_cols AS (
-                SELECT 
-                    TABLE_CATALOG AS db,
-                    TABLE_SCHEMA AS schema,
-                    TABLE_NAME AS table,
-                    COLUMN_NAME AS column,
-                    DATA_TYPE AS data_type,
-                    ORDINAL_POSITION,
-                    COMMENT
-                FROM ${TARGET_DATABASE}.INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = '${TARGET_SCHEMA}'
-            ),
-            embeddings AS (
-                SELECT 
-                    s.db AS src_db, s.schema AS src_schema, s.table AS src_table, 
-                    s.column AS src_col, s.data_type AS src_type,
-                    t.db AS tgt_db, t.schema AS tgt_schema, t.table AS tgt_table,
-                    t.column AS tgt_col, t.data_type AS tgt_type, t.COMMENT AS tgt_comment,
-                    SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', s.table || '.' || s.column) AS src_embedding,
-                    SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', 
-                        t.table || '.' || t.column || ' ' || COALESCE(t.COMMENT, '')) AS tgt_embedding
-                FROM source_cols s
-                CROSS JOIN target_cols t
-            ),
-            scored AS (
-                SELECT 
-                    src_db, src_schema, src_table, src_col, src_type,
-                    tgt_db, tgt_schema, tgt_table, tgt_col, tgt_type,
-                    VECTOR_COSINE_SIMILARITY(src_embedding, tgt_embedding) AS confidence_score,
-                    ROW_NUMBER() OVER (PARTITION BY src_db, src_schema, src_table, src_col 
-                                       ORDER BY VECTOR_COSINE_SIMILARITY(src_embedding, tgt_embedding) DESC) AS rn
-                FROM embeddings
-            )
-            SELECT 
-                src_db, src_schema, src_table, src_col, src_type,
-                tgt_db, tgt_schema, tgt_table, tgt_col, tgt_type,
-                confidence_score,
-                rn,
-                ${OUTPUT_SCHEMA}.SUGGEST_TRANSFORMATION(src_col, src_type, tgt_col, tgt_type),
-                'CORTEX_LLM',
-                OBJECT_CONSTRUCT('method', 'embedding_cosine_similarity')
-            FROM scored
-            WHERE confidence_score >= ${confidenceThreshold}
-              AND rn <= ${topN}
-        `;
-        
-        try {
-            snowflake.execute({sqlText: cortexSql});
-        } catch (err) {
-            return "Error in Cortex LLM matching: " + err.message + ". Ensure Cortex functions are available in your account.";
+    try {
+        // 1. Fetch Configuration
+        var configRs = snowflake.execute({
+            sqlText: `SELECT PARAMETER_NAME, PARAMETER_VALUE FROM ${OUTPUT_SCHEMA}.CONFIG_MATCHING_PARAMETERS`
+        });
+        var config = {};
+        while (configRs.next()) {
+            config[configRs.getColumnValue(1)] = configRs.getColumnValue(2);
         }
         
-    } else {
-        // Traditional matching
-        var traditionalSql = `
-            CREATE OR REPLACE TEMPORARY TABLE temp_source_cols AS
-            SELECT 
-                TABLE_CATALOG AS db,
-                TABLE_SCHEMA AS schema,
-                TABLE_NAME AS table,
-                COLUMN_NAME AS column,
-                DATA_TYPE AS data_type
-            FROM ${SOURCE_DATABASE}.INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = '${SOURCE_SCHEMA}'
-        `;
-        snowflake.execute({sqlText: traditionalSql});
+        var method = config['MATCHING_METHOD'] || 'TRADITIONAL';
+        var threshold = parseFloat(config['CONFIDENCE_THRESHOLD'] || '0.6');
+        var topN = parseInt(config['TOP_N_MATCHES'] || '5');
+
+        // 2. Cleanup Previous Results
+        snowflake.execute({sqlText: `TRUNCATE TABLE ${OUTPUT_SCHEMA}.MAPPING_RESULTS`});
+        snowflake.execute({sqlText: `TRUNCATE TABLE ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS`});
+
+        // 3. Materialize Metadata (Caching for Performance)
+        snowflake.execute({
+            sqlText: `CREATE OR REPLACE TEMPORARY TABLE temp_source_cols AS 
+                      SELECT TABLE_CATALOG as db, TABLE_SCHEMA as schema, TABLE_NAME as tbl, 
+                             COLUMN_NAME as col, DATA_TYPE as dtype 
+                      FROM ${SOURCE_DATABASE}.INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${SOURCE_SCHEMA}'`
+        });
+        snowflake.execute({
+            sqlText: `CREATE OR REPLACE TEMPORARY TABLE temp_target_cols AS 
+                      SELECT TABLE_CATALOG as db, TABLE_SCHEMA as schema, TABLE_NAME as tbl, 
+                             COLUMN_NAME as col, DATA_TYPE as dtype 
+                      FROM ${TARGET_DATABASE}.INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${TARGET_SCHEMA}'`
+        });
+
+        // 4. Execute Context-Aware Mapping
+        var mappingSql = "";
         
-        var targetSql = `
-            CREATE OR REPLACE TEMPORARY TABLE temp_target_cols AS
-            SELECT 
-                TABLE_CATALOG AS db,
-                TABLE_SCHEMA AS schema,
-                TABLE_NAME AS table,
-                COLUMN_NAME AS column,
-                DATA_TYPE AS data_type
-            FROM ${TARGET_DATABASE}.INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = '${TARGET_SCHEMA}'
-        `;
-        snowflake.execute({sqlText: targetSql});
-        
-        // Process matches
-        var processSql = `
-            SELECT 
-                s.db, s.schema, s.table, s.column, s.data_type,
-                t.db, t.schema, t.table, t.column, t.data_type
-            FROM temp_source_cols s
-            CROSS JOIN temp_target_cols t
-        `;
-        
-        var processStmt = snowflake.createStatement({sqlText: processSql});
-        var processRs = processStmt.execute();
-        
-        var matches = {};
-        
-        while (processRs.next()) {
-            var srcDb = processRs.getColumnValue(1);
-            var srcSchema = processRs.getColumnValue(2);
-            var srcTable = processRs.getColumnValue(3);
-            var srcCol = processRs.getColumnValue(4);
-            var srcType = processRs.getColumnValue(5);
-            var tgtDb = processRs.getColumnValue(6);
-            var tgtSchema = processRs.getColumnValue(7);
-            var tgtTable = processRs.getColumnValue(8);
-            var tgtCol = processRs.getColumnValue(9);
-            var tgtType = processRs.getColumnValue(10);
-            
-            // Call matching function
-            var matchStmt = snowflake.createStatement({
-                sqlText: "CALL " + OUTPUT_SCHEMA + ".CALCULATE_TRADITIONAL_MATCH(?, ?, ?, ?)",
-                binds: [srcCol, tgtCol, srcType, tgtType]
-            });
-            var matchRs = matchStmt.execute();
-            matchRs.next();
-            var result = JSON.parse(matchRs.getColumnValue(1));
-            
-            var score = result.confidence_score;
-            
-            if (score >= confidenceThreshold) {
-                var key = srcDb + '|' + srcSchema + '|' + srcTable + '|' + srcCol;
-                if (!matches[key]) matches[key] = [];
-                
-                matches[key].push({
-                    srcDb: srcDb, srcSchema: srcSchema, srcTable: srcTable, srcCol: srcCol, srcType: srcType,
-                    tgtDb: tgtDb, tgtSchema: tgtSchema, tgtTable: tgtTable, tgtCol: tgtCol, tgtType: tgtType,
-                    score: score,
-                    details: result
-                });
-            }
+        if (method === 'CORTEX_LLM') {
+            // Cortex Path: Tables and columns are embedded as a single semantic unit
+            mappingSql = `
+                INSERT INTO ${OUTPUT_SCHEMA}.MAPPING_RESULTS (
+                    SOURCE_DATABASE, SOURCE_SCHEMA, SOURCE_TABLE, SOURCE_COLUMN, SOURCE_DATA_TYPE,
+                    TARGET_DATABASE, TARGET_SCHEMA, TARGET_TABLE, TARGET_COLUMN, TARGET_DATA_TYPE,
+                    CONFIDENCE_SCORE, MATCH_RANK, TRANSFORMATION_SQL, MATCHING_METHOD, MATCH_DETAILS
+                )
+                WITH src_emb AS (
+                    SELECT *, SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', tbl || ' ' || col) as emb FROM temp_source_cols
+                ),
+                tgt_emb AS (
+                    SELECT *, SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', tbl || ' ' || col) as emb FROM temp_target_cols
+                ),
+                scored AS (
+                    SELECT s.db, s.schema, s.tbl, s.col, s.dtype, 
+                           t.db as t_db, t.schema as t_schema, t.tbl as t_tbl, t.col as t_col, t.dtype as t_type,
+                           VECTOR_COSINE_SIMILARITY(s.emb, t.emb) as score,
+                           -- Partition by target instead of source - find fit to target
+           ROW_NUMBER() OVER (PARTITION BY t.db, t.schema, t.tbl, t.col ORDER BY score DESC) as rn
+    FROM src_emb s CROSS JOIN tgt_emb t
+                )
+                SELECT db, schema, tbl, col, dtype, t_db, t_schema, t_tbl, t_col, t_type, 
+                       score, rn, ${OUTPUT_SCHEMA}.SUGGEST_TRANSFORMATION(col, dtype, t_col, t_type), 
+                       'CORTEX_LLM_CONTEXTUAL', OBJECT_CONSTRUCT('context', 'table_plus_column')
+                FROM scored WHERE score >= ${threshold} AND rn <= ${topN}`;
+        } else {
+            // Traditional Path: Fuzzy logic compares concatenated strings
+            mappingSql = `
+                INSERT INTO ${OUTPUT_SCHEMA}.MAPPING_RESULTS (
+                    SOURCE_DATABASE, SOURCE_SCHEMA, SOURCE_TABLE, SOURCE_COLUMN, SOURCE_DATA_TYPE,
+                    TARGET_DATABASE, TARGET_SCHEMA, TARGET_TABLE, TARGET_COLUMN, TARGET_DATA_TYPE,
+                    CONFIDENCE_SCORE, MATCH_RANK, TRANSFORMATION_SQL, MATCHING_METHOD, MATCH_DETAILS
+                )
+                WITH weights AS (
+                    SELECT 
+                        MAX(CASE WHEN PARAMETER_NAME = 'WEIGHT_EXACT_MATCH' THEN PARAMETER_VALUE::FLOAT END) as w_exact,
+                        MAX(CASE WHEN PARAMETER_NAME = 'WEIGHT_FUZZY_MATCH' THEN PARAMETER_VALUE::FLOAT END) as w_fuzzy,
+                        MAX(CASE WHEN PARAMETER_NAME = 'WEIGHT_PHONETIC_MATCH' THEN PARAMETER_VALUE::FLOAT END) as w_phonetic,
+                        MAX(CASE WHEN PARAMETER_NAME = 'WEIGHT_DATATYPE_MATCH' THEN PARAMETER_VALUE::FLOAT END) as w_datatype
+                    FROM ${OUTPUT_SCHEMA}.CONFIG_MATCHING_PARAMETERS
+                ),
+                scored AS (
+                    SELECT 
+                        s.db as s_db, s.schema as s_schema, s.tbl as s_tbl, s.col as s_col, s.dtype as s_type,
+                        t.db as t_db, t.schema as t_schema, t.tbl as t_tbl, t.col as t_col, t.dtype as t_type,
+                        ( (CASE WHEN UPPER(s.col) = UPPER(t.col) THEN 1.0 ELSE 0.0 END * w.w_exact) +
+                          (JAROWINKLER_SIMILARITY(s.tbl || '_' || s.col, t.tbl || '_' || t.col)/100.0 * w.w_fuzzy) +
+                          (CASE WHEN SOUNDEX(s.col) = SOUNDEX(t.col) THEN 1.0 ELSE 0.0 END * w.w_phonetic) +
+                          (CASE WHEN SPLIT_PART(s.dtype, '(', 1) = SPLIT_PART(t.dtype, '(', 1) THEN 1.0 ELSE 0.2 END * w.w_datatype)
+                        ) / NULLIF(w.w_exact + w.w_fuzzy + w.w_phonetic + w.w_datatype, 0) as score,
+                        -- Partition by target instead of source - get best target match
+        ROW_NUMBER() OVER (PARTITION BY t_db, t_schema, t_tbl, t_col ORDER BY score DESC) as rn
+    FROM temp_source_cols s CROSS JOIN temp_target_cols t CROSS JOIN weights w
+                )
+                SELECT s_db, s_schema, s_tbl, s_col, s_type, t_db, t_schema, t_tbl, t_col, t_type,
+                       score, rn, ${OUTPUT_SCHEMA}.SUGGEST_TRANSFORMATION(s_col, s_type, t_col, t_type),
+                       'TRADITIONAL_CONTEXTUAL', OBJECT_CONSTRUCT('logic', 'table_qualified_similarity')
+                FROM scored WHERE score >= ${threshold} AND rn <= ${topN}`;
         }
-        
-        // Insert top N matches for each source column
-        for (var key in matches) {
-            var matchList = matches[key];
-            matchList.sort(function(a, b) { return b.score - a.score; });
-            
-            for (var i = 0; i < Math.min(matchList.length, topN); i++) {
-                var m = matchList[i];
-                
-                var transformStmt = snowflake.createStatement({
-                    sqlText: "SELECT " + OUTPUT_SCHEMA + ".SUGGEST_TRANSFORMATION(?, ?, ?, ?)",
-                    binds: [m.srcCol, m.srcType, m.tgtCol, m.tgtType]
-                });
-                var transformRs = transformStmt.execute();
-                transformRs.next();
-                var transformation = transformRs.getColumnValue(1);
-                
-                var insertStmt = snowflake.createStatement({
-                    sqlText: `
-                        INSERT INTO ${OUTPUT_SCHEMA}.MAPPING_RESULTS (
-                            SOURCE_DATABASE, SOURCE_SCHEMA, SOURCE_TABLE, SOURCE_COLUMN, SOURCE_DATA_TYPE,
-                            TARGET_DATABASE, TARGET_SCHEMA, TARGET_TABLE, TARGET_COLUMN, TARGET_DATA_TYPE,
-                            CONFIDENCE_SCORE, MATCH_RANK, TRANSFORMATION_SQL, MATCHING_METHOD, MATCH_DETAILS
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, PARSE_JSON(?))
-                    `,
-                    binds: [
-                        m.srcDb, m.srcSchema, m.srcTable, m.srcCol, m.srcType,
-                        m.tgtDb, m.tgtSchema, m.tgtTable, m.tgtCol, m.tgtType,
-                        m.score, i + 1, transformation, 'TRADITIONAL',
-                        JSON.stringify(m.details)
-                    ]
-                });
-                insertStmt.execute();
-            }
-        }
+
+        snowflake.execute({sqlText: mappingSql});
+
+        // 5. Unmapped Tracking
+        snowflake.execute({
+            sqlText: `INSERT INTO ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS (SIDE, DATABASE_NAME, SCHEMA_NAME, TABLE_NAME, COLUMN_NAME, DATA_TYPE)
+                      SELECT 'SOURCE', db, schema, tbl, col, dtype FROM temp_source_cols s
+                      WHERE NOT EXISTS (SELECT 1 FROM ${OUTPUT_SCHEMA}.MAPPING_RESULTS m 
+                                        WHERE m.SOURCE_COLUMN = s.col AND m.MATCH_RANK = 1)`
+        });
+
+        var summary = snowflake.execute({
+            sqlText: `SELECT COUNT(*) FROM ${OUTPUT_SCHEMA}.MAPPING_RESULTS WHERE MATCH_RANK = 1`
+        });
+        summary.next();
+        return `Success: Mapped ${summary.getColumnValue(1)} columns using ${method} (Table-Aware) method.`;
+
+    } catch (err) {
+        return "Error: " + err.message;
     }
-    
-    // Find unmapped source columns
-    var unmappedSourceSql = `
-        INSERT INTO ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS (SIDE, DATABASE_NAME, SCHEMA_NAME, TABLE_NAME, COLUMN_NAME, DATA_TYPE)
-        SELECT 
-            'SOURCE',
-            s.TABLE_CATALOG,
-            s.TABLE_SCHEMA,
-            s.TABLE_NAME,
-            s.COLUMN_NAME,
-            s.DATA_TYPE
-        FROM ${SOURCE_DATABASE}.INFORMATION_SCHEMA.COLUMNS s
-        WHERE s.TABLE_SCHEMA = '${SOURCE_SCHEMA}'
-          AND NOT EXISTS (
-              SELECT 1 FROM ${OUTPUT_SCHEMA}.MAPPING_RESULTS m
-              WHERE m.SOURCE_DATABASE = s.TABLE_CATALOG
-                AND m.SOURCE_SCHEMA = s.TABLE_SCHEMA
-                AND m.SOURCE_TABLE = s.TABLE_NAME
-                AND m.SOURCE_COLUMN = s.COLUMN_NAME
-                AND m.MATCH_RANK = 1
-          )
-    `;
-    snowflake.execute({sqlText: unmappedSourceSql});
-    
-    // Find unmapped target columns
-    var unmappedTargetSql = `
-        INSERT INTO ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS (SIDE, DATABASE_NAME, SCHEMA_NAME, TABLE_NAME, COLUMN_NAME, DATA_TYPE)
-        SELECT 
-            'TARGET',
-            t.TABLE_CATALOG,
-            t.TABLE_SCHEMA,
-            t.TABLE_NAME,
-            t.COLUMN_NAME,
-            t.DATA_TYPE
-        FROM ${TARGET_DATABASE}.INFORMATION_SCHEMA.COLUMNS t
-        WHERE t.TABLE_SCHEMA = '${TARGET_SCHEMA}'
-          AND NOT EXISTS (
-              SELECT 1 FROM ${OUTPUT_SCHEMA}.MAPPING_RESULTS m
-              WHERE m.TARGET_DATABASE = t.TABLE_CATALOG
-                AND m.TARGET_SCHEMA = t.TABLE_SCHEMA
-                AND m.TARGET_TABLE = t.TABLE_NAME
-                AND m.TARGET_COLUMN = t.COLUMN_NAME
-          )
-    `;
-    snowflake.execute({sqlText: unmappedTargetSql});
-    
-    // Get summary counts
-    var summaryStmt = snowflake.createStatement({
-        sqlText: `
-            SELECT 
-                COUNT(DISTINCT SOURCE_DATABASE || '.' || SOURCE_SCHEMA || '.' || SOURCE_TABLE || '.' || SOURCE_COLUMN) AS mapped_source_cols,
-                (SELECT COUNT(*) FROM ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS WHERE SIDE = 'SOURCE') AS unmapped_source_cols,
-                (SELECT COUNT(*) FROM ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS WHERE SIDE = 'TARGET') AS unmapped_target_cols
-            FROM ${OUTPUT_SCHEMA}.MAPPING_RESULTS
-            WHERE MATCH_RANK = 1
-        `
-    });
-    var summaryRs = summaryStmt.execute();
-    summaryRs.next();
-    
-    return "Semantic mapping completed successfully. " +
-           "Mapped: " + summaryRs.getColumnValue(1) + " source columns, " +
-           "Unmapped: " + summaryRs.getColumnValue(2) + " source columns, " +
-           summaryRs.getColumnValue(3) + " target columns. " +
-           "Method: " + matchingMethod;
-$;
+$$;
 
 -- =====================================================================
 -- VIEWS FOR RESULTS
@@ -909,13 +761,34 @@ SELECT
     COUNT(DISTINCT SOURCE_DATABASE || '.' || SOURCE_SCHEMA || '.' || SOURCE_TABLE || '.' || SOURCE_COLUMN) AS source_columns_mapped,
     COUNT(DISTINCT TARGET_DATABASE || '.' || TARGET_SCHEMA || '.' || TARGET_TABLE) AS target_tables,
     COUNT(DISTINCT TARGET_DATABASE || '.' || TARGET_SCHEMA || '.' || TARGET_TABLE || '.' || TARGET_COLUMN) AS target_columns_matched,
-    AVG(CONFIDENCE_SCORE) AS avg_confidence,
-    MIN(CONFIDENCE_SCORE) AS min_confidence,
-    MAX(CONFIDENCE_SCORE) AS max_confidence,
+    ROUND(AVG(CONFIDENCE_SCORE), 4) AS avg_confidence,
+    ROUND(MIN(CONFIDENCE_SCORE), 4) AS min_confidence,
+    ROUND(MAX(CONFIDENCE_SCORE), 4) AS max_confidence,
     COUNT(*) AS total_mappings
 FROM MAPPING_RESULTS
 WHERE MATCH_RANK = 1
 GROUP BY MATCHING_METHOD;
+
+-- View: Detailed match breakdown by component scores
+CREATE OR REPLACE VIEW V_MATCH_SCORE_BREAKDOWN AS
+SELECT 
+    SOURCE_DATABASE,
+    SOURCE_SCHEMA,
+    SOURCE_TABLE,
+    SOURCE_COLUMN,
+    TARGET_TABLE,
+    TARGET_COLUMN,
+    CONFIDENCE_SCORE,
+    MATCH_RANK,
+    MATCH_DETAILS:component_scores:exact::FLOAT AS exact_score,
+    MATCH_DETAILS:component_scores:fuzzy::FLOAT AS fuzzy_score,
+    MATCH_DETAILS:component_scores:token::FLOAT AS token_score,
+    MATCH_DETAILS:component_scores:phonetic::FLOAT AS phonetic_score,
+    MATCH_DETAILS:component_scores:synonym::FLOAT AS synonym_score,
+    MATCH_DETAILS:component_scores:datatype::FLOAT AS datatype_score
+FROM MAPPING_RESULTS
+WHERE MATCHING_METHOD = 'TRADITIONAL'
+ORDER BY SOURCE_TABLE, SOURCE_COLUMN, MATCH_RANK;
 
 -- =====================================================================
 -- USAGE EXAMPLES AND DOCUMENTATION
@@ -927,7 +800,8 @@ SETUP INSTRUCTIONS:
 
 1. Execute this entire script to create the schema, tables, functions, procedures, and views.
 
-2. Configure matching parameters:
+2. Configure matching parameters (optional - defaults are provided):
+   
    UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS 
    SET PARAMETER_VALUE = 'CORTEX_LLM'  -- or 'TRADITIONAL'
    WHERE PARAMETER_NAME = 'MATCHING_METHOD';
@@ -939,13 +813,26 @@ SETUP INSTRUCTIONS:
    UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS 
    SET PARAMETER_VALUE = '3'
    WHERE PARAMETER_NAME = 'TOP_N_MATCHES';
+   
+   -- Adjust weights (optional)
+   UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS 
+   SET PARAMETER_VALUE = '1.0'
+   WHERE PARAMETER_NAME = 'WEIGHT_SYNONYM_MATCH';
 
 3. (Optional) Add exclusions:
+   
    INSERT INTO SEMANTIC_MAPPING.CONFIG_EXCLUSIONS VALUES
    ('SCHEMA', 'INFORMATION_SCHEMA', 'Exclude system schemas'),
    ('TABLE', '%_BACKUP', 'Exclude backup tables');
 
-4. Execute the mapping:
+4. (Optional) Add custom abbreviations/synonyms:
+   
+   INSERT INTO SEMANTIC_MAPPING.DICT_ABBREVIATIONS VALUES
+   ('CUST_NO', 'CUSTOMER_NUMBER', 'BUSINESS'),
+   ('ORG', 'ORGANIZATION', 'BUSINESS');
+
+5. Execute the mapping:
+   
    CALL SEMANTIC_MAPPING.EXECUTE_SEMANTIC_MAPPING(
        'SOURCE_DB',      -- Source database name
        'SOURCE_SCHEMA',  -- Source schema name
@@ -953,47 +840,112 @@ SETUP INSTRUCTIONS:
        'TARGET_SCHEMA'   -- Target schema name
    );
 
-5. Query results:
-   -- Best matches
+6. Query results:
+   
+   -- Best matches only (rank 1)
    SELECT * FROM SEMANTIC_MAPPING.V_BEST_MATCHES;
    
-   -- All candidates
+   -- All candidate matches with rankings
    SELECT * FROM SEMANTIC_MAPPING.V_ALL_MATCH_CANDIDATES
    WHERE SOURCE_TABLE = 'MY_TABLE';
    
    -- Unmapped columns
    SELECT * FROM SEMANTIC_MAPPING.V_UNMAPPED_SUMMARY;
    
-   -- Statistics
+   -- Overall statistics
    SELECT * FROM SEMANTIC_MAPPING.V_MAPPING_STATISTICS;
+   
+   -- Detailed score breakdown (Traditional method only)
+   SELECT * FROM SEMANTIC_MAPPING.V_MATCH_SCORE_BREAKDOWN
+   WHERE SOURCE_TABLE = 'CUSTOMERS';
 
 CONFIGURATION OPTIONS:
 ======================
 
 - MATCHING_METHOD: 'TRADITIONAL' or 'CORTEX_LLM'
-- CONFIDENCE_THRESHOLD: Minimum score (0.0 to 1.0)
-- TOP_N_MATCHES: Number of candidate matches per source column
-- WEIGHT_EXACT_MATCH: Weight for exact name matches (0.0 to 1.0)
-- WEIGHT_FUZZY_MATCH: Weight for fuzzy string similarity (0.0 to 1.0)
-- WEIGHT_TOKEN_MATCH: Weight for token-based matching (0.0 to 1.0)
-- WEIGHT_PHONETIC_MATCH: Weight for phonetic similarity (0.0 to 1.0)
-- WEIGHT_SYNONYM_MATCH: Weight for synonym/abbreviation matches (0.0 to 1.0)
-- WEIGHT_DATATYPE_MATCH: Weight for compatible data types (0.0 to 1.0)
+  * TRADITIONAL: Uses string similarity, tokens, phonetics, synonyms (works on all editions)
+  * CORTEX_LLM: Uses AI embeddings for semantic matching (requires Cortex AI features)
+
+- CONFIDENCE_THRESHOLD: Minimum score (0.0 to 1.0, default 0.60)
+  * Lower values = more matches but lower quality
+  * Higher values = fewer matches but higher quality
+
+- TOP_N_MATCHES: Number of candidate matches per source column (default 5)
+  * Useful for reviewing alternative mappings
+
+- Weights (all default to values between 0.0 and 1.0):
+  * WEIGHT_EXACT_MATCH: Exact column name matches (default 1.0)
+  * WEIGHT_FUZZY_MATCH: String similarity (default 0.7)
+  * WEIGHT_TOKEN_MATCH: Word/token matching (default 0.8)
+  * WEIGHT_PHONETIC_MATCH: Sound-alike names (default 0.5)
+  * WEIGHT_SYNONYM_MATCH: Abbreviation expansion (default 0.9)
+  * WEIGHT_DATATYPE_MATCH: Compatible data types (default 0.3)
+
+PERFORMANCE NOTES:
+==================
+
+- The Traditional method processes all source x target column combinations
+- For large schemas (100s of tables, 1000s of columns), execution may take several minutes
+- The Cortex LLM method is typically faster but requires appropriate Snowflake features
+- Consider filtering to specific tables if only partial mapping is needed
+- Results are stored in tables, so you only need to run the mapping once
 
 CUSTOMIZATION:
 ==============
 
-- Add more abbreviations/synonyms to DICT_ABBREVIATIONS table
-- Adjust weights to prioritize certain matching methods
-- Add schema/table exclusion patterns
-- Modify transformation logic in SUGGEST_TRANSFORMATION function
+- Add industry-specific abbreviations to DICT_ABBREVIATIONS
+- Adjust weights to prioritize certain matching aspects for your domain
+- Add schema/table exclusion patterns for system tables
+- Modify SUGGEST_TRANSFORMATION function for custom transformation logic
+- Extend CALCULATE_TRADITIONAL_MATCH for additional scoring components
 
-NOTES:
-======
+TROUBLESHOOTING:
+================
 
-- CORTEX_LLM method requires Snowflake account with Cortex AI features enabled
-- Traditional method works on all Snowflake editions
-- Results are stored in MAPPING_RESULTS and UNMAPPED_COLUMNS tables
-- Multiple executions will overwrite previous results
-- All matching is case-insensitive
+- "No source/target columns found": Check database and schema names are correct
+- "Cortex LLM error": Ensure your Snowflake account has Cortex AI enabled
+- Low confidence scores: Try adjusting weights or lowering threshold
+- Too many matches: Increase confidence threshold or reduce TOP_N_MATCHES
+- Missing abbreviations: Add custom entries to DICT_ABBREVIATIONS table
+
+EXAMPLE WORKFLOW:
+=================
+
+-- 1. Set to Traditional matching with moderate threshold
+UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS 
+SET PARAMETER_VALUE = 'TRADITIONAL' WHERE PARAMETER_NAME = 'MATCHING_METHOD';
+
+UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS 
+SET PARAMETER_VALUE = '0.65' WHERE PARAMETER_NAME = 'CONFIDENCE_THRESHOLD';
+
+-- 2. Run the mapping
+CALL SEMANTIC_MAPPING.EXECUTE_SEMANTIC_MAPPING('MY_SOURCE_DB', 'PUBLIC', 'MY_TARGET_DB', 'PUBLIC');
+
+-- 3. Review best matches
+SELECT 
+    SOURCE_TABLE,
+    SOURCE_COLUMN,
+    TARGET_TABLE,
+    TARGET_COLUMN,
+    ROUND(CONFIDENCE_SCORE, 3) AS SCORE,
+    TRANSFORMATION_SQL
+FROM SEMANTIC_MAPPING.V_BEST_MATCHES
+WHERE CONFIDENCE_SCORE >= 0.8
+ORDER BY SOURCE_TABLE, SOURCE_COLUMN;
+
+-- 4. Check unmapped columns
+SELECT SIDE, TABLE_NAME, COUNT(*) AS unmapped_count
+FROM SEMANTIC_MAPPING.V_UNMAPPED_SUMMARY
+GROUP BY SIDE, TABLE_NAME
+ORDER BY unmapped_count DESC;
+
+-- 5. Review alternative matches for specific columns
+SELECT 
+    TARGET_COLUMN,
+    CONFIDENCE_SCORE,
+    MATCH_RANK,
+    TRANSFORMATION_SQL
+FROM SEMANTIC_MAPPING.V_ALL_MATCH_CANDIDATES
+WHERE SOURCE_TABLE = 'ORDERS' AND SOURCE_COLUMN = 'CUST_ID'
+ORDER BY MATCH_RANK;
 */
