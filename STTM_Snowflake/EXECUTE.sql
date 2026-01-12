@@ -1,0 +1,13 @@
+USE DATABASE STTM_SOLUTIONS;
+
+UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS 
+SET PARAMETER_VALUE = 'CORTEX_LLM'  -- or 'TRADITIONAL'
+WHERE PARAMETER_NAME = 'MATCHING_METHOD';
+
+CALL SEMANTIC_MAPPING.EXECUTE_SEMANTIC_MAPPING(
+       'STTM_SOLUTIONS',      -- Source database name
+       'STAGE_STM',  -- Source schema name
+       'STTM_SOLUTIONS',      -- Target database name
+       'MODEL_STM'   -- Target schema name
+   );
+   
