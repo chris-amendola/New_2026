@@ -104,6 +104,15 @@ CREATE OR REPLACE TABLE CONFIG_EXCLUSIONS (
     DESCRIPTION VARCHAR(1000)
 );
 
+-- Whitelist/inclusion list for specific tables
+CREATE OR REPLACE TABLE CONFIG_INCLUSIONS (
+    INCLUSION_TYPE VARCHAR(20), -- 'TABLE'
+    DATABASE_NAME VARCHAR(256),
+    SCHEMA_NAME VARCHAR(256),
+    TABLE_NAME VARCHAR(256),
+    DESCRIPTION VARCHAR(1000),
+    CONSTRAINT unique_inclusion UNIQUE (DATABASE_NAME, SCHEMA_NAME, TABLE_NAME)
+);
 -- =====================================================================
 -- OUTPUT TABLES
 -- =====================================================================
@@ -592,12 +601,30 @@ $$
         snowflake.execute({sqlText: `TRUNCATE TABLE ${OUTPUT_SCHEMA}.UNMAPPED_COLUMNS`});
 
         // 3. Materialize Metadata (Caching for Performance)
-        snowflake.execute({
-            sqlText: `CREATE OR REPLACE TEMPORARY TABLE temp_source_cols AS 
-                      SELECT TABLE_CATALOG as db, TABLE_SCHEMA as schema, TABLE_NAME as tbl, 
-                             COLUMN_NAME as col, DATA_TYPE as dtype 
-                      FROM ${SOURCE_DATABASE}.INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '${SOURCE_SCHEMA}'`
+        // Check if whitelist has entries
+        var whitelistCheckRs = snowflake.execute({
+            sqlText: `SELECT COUNT(*) as cnt FROM ${OUTPUT_SCHEMA}.CONFIG_INCLUSIONS 
+                      WHERE DATABASE_NAME = '${SOURCE_DATABASE}' AND SCHEMA_NAME = '${SOURCE_SCHEMA}'`
         });
+
+        whitelistCheckRs.next();
+        var hasWhitelist = whitelistCheckRs.getColumnValue(1) > 0;
+        // Build source columns query with optional whitelist filter
+        var sourceColsSql = `CREATE OR REPLACE TEMPORARY TABLE temp_source_cols AS 
+                             SELECT TABLE_CATALOG as db, TABLE_SCHEMA as schema, TABLE_NAME as tbl, 
+                                    COLUMN_NAME as col, DATA_TYPE as dtype 
+                             FROM ${SOURCE_DATABASE}.INFORMATION_SCHEMA.COLUMNS 
+                             WHERE TABLE_SCHEMA = '${SOURCE_SCHEMA}'`;
+        
+        if (hasWhitelist) {
+            sourceColsSql += ` AND TABLE_NAME IN (
+                SELECT TABLE_NAME FROM ${OUTPUT_SCHEMA}.CONFIG_INCLUSIONS 
+                WHERE DATABASE_NAME = '${SOURCE_DATABASE}' 
+                AND SCHEMA_NAME = '${SOURCE_SCHEMA}')`;
+        }
+        
+        snowflake.execute({sqlText: sourceColsSql});
+        
         snowflake.execute({
             sqlText: `CREATE OR REPLACE TEMPORARY TABLE temp_target_cols AS 
                       SELECT TABLE_CATALOG as db, TABLE_SCHEMA as schema, TABLE_NAME as tbl, 
@@ -790,6 +817,17 @@ FROM MAPPING_RESULTS
 WHERE MATCHING_METHOD = 'TRADITIONAL'
 ORDER BY SOURCE_TABLE, SOURCE_COLUMN, MATCH_RANK;
 
+-- View: Whitelist configuration status
+CREATE OR REPLACE VIEW V_WHITELIST_STATUS AS
+SELECT 
+    DATABASE_NAME,
+    SCHEMA_NAME,
+    TABLE_NAME,
+    DESCRIPTION,
+    'INCLUDED' AS STATUS
+FROM CONFIG_INCLUSIONS
+ORDER BY DATABASE_NAME, SCHEMA_NAME, TABLE_NAME;
+
 -- =====================================================================
 -- USAGE EXAMPLES AND DOCUMENTATION
 -- =====================================================================
@@ -824,6 +862,21 @@ SETUP INSTRUCTIONS:
    INSERT INTO SEMANTIC_MAPPING.CONFIG_EXCLUSIONS VALUES
    ('SCHEMA', 'INFORMATION_SCHEMA', 'Exclude system schemas'),
    ('TABLE', '%_BACKUP', 'Exclude backup tables');
+
+3.5 (Optional) Add tables to whitelist for selective processing:
+   
+   -- Only process specific tables from source schema
+   INSERT INTO SEMANTIC_MAPPING.CONFIG_INCLUSIONS VALUES
+   ('TABLE', 'SOURCE_DB', 'SOURCE_SCHEMA', 'CUSTOMERS', 'Include customer table'),
+   ('TABLE', 'SOURCE_DB', 'SOURCE_SCHEMA', 'ORDERS', 'Include orders table'),
+   ('TABLE', 'SOURCE_DB', 'SOURCE_SCHEMA', 'PRODUCTS', 'Include products table');
+   
+   -- View current whitelist
+   SELECT * FROM SEMANTIC_MAPPING.CONFIG_INCLUSIONS;
+   
+   -- Clear whitelist to process all tables
+   DELETE FROM SEMANTIC_MAPPING.CONFIG_INCLUSIONS 
+   WHERE DATABASE_NAME = 'SOURCE_DB' AND SCHEMA_NAME = 'SOURCE_SCHEMA';
 
 4. (Optional) Add custom abbreviations/synonyms:
    

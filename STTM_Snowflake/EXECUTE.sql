@@ -4,10 +4,22 @@ UPDATE SEMANTIC_MAPPING.CONFIG_MATCHING_PARAMETERS
 SET PARAMETER_VALUE = 'CORTEX_LLM'  -- or 'TRADITIONAL'
 WHERE PARAMETER_NAME = 'MATCHING_METHOD';
 
+-- View current whitelist
+SELECT * FROM SEMANTIC_MAPPING.CONFIG_INCLUSIONS;
+   
+-- Clear whitelist to process all tables
+DELETE FROM SEMANTIC_MAPPING.CONFIG_INCLUSIONS 
+WHERE DATABASE_NAME = 'SOURCE_DB' AND SCHEMA_NAME = 'SOURCE_SCHEMA';
+
+-- Only process specific tables from source schema
+INSERT INTO SEMANTIC_MAPPING.CONFIG_INCLUSIONS VALUES
+('TABLE', 'STTM_SOLUTIONS', 'STAGE_STM', 'DECOY', 'Test Table selection');
+
 CALL SEMANTIC_MAPPING.EXECUTE_SEMANTIC_MAPPING(
        'STTM_SOLUTIONS',      -- Source database name
        'STAGE_STM',  -- Source schema name
        'STTM_SOLUTIONS',      -- Target database name
        'MODEL_STM'   -- Target schema name
    );
+   
    
