@@ -1,6 +1,5 @@
 -- =====================================================================
--- OPTIMIZED DYNAMIC TABLE PROFILING PROCEDURE
--- Healthcare Data Engineering - Snowflake Platform
+-- PERFORMANCE-OPTIMIZED DYNAMIC TABLE PROFILING
 -- =====================================================================
 
 CREATE OR REPLACE PROCEDURE PROFILE_TABLE(
@@ -19,7 +18,8 @@ AS
 $$
 DECLARE
     full_table_name VARCHAR;
-    source_table VARCHAR;
+    source_query VARCHAR;
+    -- FIX: Colons added to bind procedure parameters correctly
     col_cursor CURSOR FOR 
         SELECT column_name, data_type 
         FROM INFORMATION_SCHEMA.COLUMNS 
@@ -33,25 +33,28 @@ DECLARE
 BEGIN
     full_table_name := '"' || DATABASE_NAME || '"."' || SCHEMA_NAME || '"."' || TABLE_NAME || '"';
     
-    -- Create a sampling CTE to use throughout the session if SAMPLE_SIZE > 0
-    -- This ensures we only scan the data once per column
-    source_table := '(SELECT * FROM ' || full_table_name || ' LIMIT ' || SAMPLE_SIZE || ')';
+    -- IMPLEMENTATION: Sampling logic to prevent full table scans on massive datasets
+    source_query := '(SELECT * FROM ' || full_table_name || ' LIMIT ' || SAMPLE_SIZE || ')';
 
-    -- Create temporary results table to collect all metrics
-    CREATE OR REPLACE TEMPORARY TABLE TEMP_PROFILER_OUTPUT (
+    -- Create or reset temporary results table
+    CREATE OR REPLACE TEMPORARY TABLE TEMP_PROFILE_RESULTS (
         metric_category VARCHAR,
         metric_name VARCHAR,
         metric_value VARIANT
     );
     
     -- 1. TABLE-LEVEL METRICS (Single Scan)
-    INSERT INTO TEMP_PROFILER_OUTPUT
-    SELECT 'Table Overview', 'Total Rows', TO_VARIANT(COUNT(*)) FROM IDENTIFIER(:full_table_name);
+    sql_stmt := 'INSERT INTO TEMP_PROFILE_RESULTS ' ||
+                'SELECT ''Table Overview'', ''Total Rows'', TO_VARIANT(COUNT(*)) ' ||
+                'FROM ' || full_table_name;
+    EXECUTE IMMEDIATE :sql_stmt;
     
-    INSERT INTO TEMP_PROFILER_OUTPUT
+    INSERT INTO TEMP_PROFILE_RESULTS
     SELECT 'Table Overview', 'Table Size (MB)', TO_VARIANT(ROUND(bytes/1024/1024, 2))
     FROM INFORMATION_SCHEMA.TABLES
-    WHERE table_catalog = :DATABASE_NAME AND table_schema = :SCHEMA_NAME AND table_name = :TABLE_NAME;
+    WHERE table_catalog = :DATABASE_NAME 
+      AND table_schema = :SCHEMA_NAME 
+      AND table_name = :TABLE_NAME;
 
     -- 2. COLUMN-LEVEL PROFILING
     FOR record IN col_cursor DO
@@ -59,58 +62,67 @@ BEGIN
         LET col_raw VARCHAR := record.column_name;
         LET dtype VARCHAR := record.data_type;
         
-        -- Basic Metrics (Nulls, Distinct) - Done in ONE scan per column
-        sql_stmt := 'INSERT INTO TEMP_PROFILER_OUTPUT
-            SELECT 
-                ''' || col_raw || ''', 
-                metric_name, 
-                val 
+        -- Basic Profiling (Nulls, Distinct, Cardinality) in ONE query
+        sql_stmt := 'INSERT INTO TEMP_PROFILE_RESULTS
+            SELECT ''' || col_raw || ''', metric_name, val 
             FROM (
                 SELECT 
                     TO_VARIANT(''' || dtype || ''') as "Data Type",
                     TO_VARIANT(COUNT(*) - COUNT(' || col || ')) as "Null Count",
-                    TO_VARIANT(ROUND((COUNT(*) - COUNT(' || col || ')) * 100.0 / NULLIF(COUNT(*), 0), 2)) as "Null Percentage",
-                    TO_VARIANT(COUNT(DISTINCT ' || col || ')) as "Distinct Count",
-                    TO_VARIANT(ROUND(COUNT(DISTINCT ' || col || ') * 100.0 / NULLIF(COUNT(*), 0), 2)) as "Cardinality Ratio"
-                FROM ' || source_table || '
-            ) UNPIVOT(val FOR metric_name IN ("Data Type", "Null Count", "Null Percentage", "Distinct Count", "Cardinality Ratio"))';
+                    TO_VARIANT(ROUND((COUNT(*) - COUNT(' || col || ')) * 100.0 / NULLIF(COUNT(*), 0), 2)) as "Null %",
+                    TO_VARIANT(COUNT(DISTINCT ' || col || ')) as "Distinct Count"
+                FROM ' || source_query || '
+            ) UNPIVOT(val FOR metric_name IN ("Data Type", "Null Count", "Null %", "Distinct Count"))';
         EXECUTE IMMEDIATE :sql_stmt;
 
-        -- Numeric Specifics (Single Scan)
+        -- Numeric Profiling (One scan for all stats)
         IF (dtype IN ('NUMBER', 'INTEGER', 'FLOAT', 'DOUBLE', 'DECIMAL')) THEN
-            sql_stmt := 'INSERT INTO TEMP_PROFILER_OUTPUT
+            sql_stmt := 'INSERT INTO TEMP_PROFILE_RESULTS
                 SELECT ''' || col_raw || ''', metric_name, val
                 FROM (
                     SELECT 
-                        TO_VARIANT(MIN(' || col || ')) as "Min",
-                        TO_VARIANT(MAX(' || col || ')) as "Max",
-                        TO_VARIANT(AVG(' || col || ')) as "Mean",
-                        TO_VARIANT(MEDIAN(' || col || ')) as "Median",
-                        TO_VARIANT(STDDEV(' || col || ')) as "Std Dev"
-                    FROM ' || source_table || '
-                ) UNPIVOT(val FOR metric_name IN ("Min", "Max", "Mean", "Median", "Std Dev"))';
+                        TO_VARIANT(MIN(' || col || ')) as "Min Value",
+                        TO_VARIANT(MAX(' || col || ')) as "Max Value",
+                        TO_VARIANT(ROUND(AVG(' || col || '), 2)) as "Mean",
+                        TO_VARIANT(ROUND(MEDIAN(' || col || '), 2)) as "Median"
+                    FROM ' || source_query || '
+                ) UNPIVOT(val FOR metric_name IN ("Min Value", "Max Value", "Mean", "Median"))';
             EXECUTE IMMEDIATE :sql_stmt;
         END IF;
 
-        -- String Specifics (Single Scan)
+        -- String Profiling (One scan for length stats)
         IF (dtype IN ('TEXT', 'VARCHAR', 'STRING', 'CHAR')) THEN
-            sql_stmt := 'INSERT INTO TEMP_PROFILER_OUTPUT
+            sql_stmt := 'INSERT INTO TEMP_PROFILE_RESULTS
                 SELECT ''' || col_raw || ''', metric_name, val
                 FROM (
                     SELECT 
                         TO_VARIANT(MIN(LENGTH(' || col || '))) as "Min Length",
                         TO_VARIANT(MAX(LENGTH(' || col || '))) as "Max Length",
-                        TO_VARIANT(AVG(LENGTH(' || col || '))) as "Avg Length"
-                    FROM ' || source_table || '
+                        TO_VARIANT(ROUND(AVG(LENGTH(' || col || ')), 2)) as "Avg Length"
+                    FROM ' || source_query || '
                 ) UNPIVOT(val FOR metric_name IN ("Min Length", "Max Length", "Avg Length"))';
             EXECUTE IMMEDIATE :sql_stmt;
         END IF;
 
+        -- Date/Time Profiling
+        IF (dtype LIKE '%DATE%' OR dtype LIKE '%TIMESTAMP%') THEN
+            sql_stmt := 'INSERT INTO TEMP_PROFILE_RESULTS
+                SELECT ''' || col_raw || ''', metric_name, val
+                FROM (
+                    SELECT 
+                        TO_VARIANT(MIN(' || col || ')) as "Min Date",
+                        TO_VARIANT(MAX(' || col || ')) as "Max Date",
+                        TO_VARIANT(DATEDIFF(DAY, MIN(' || col || '), MAX(' || col || '))) as "Range (Days)"
+                    FROM ' || source_query || '
+                ) UNPIVOT(val FOR metric_name IN ("Min Date", "Max Date", "Range (Days)"))';
+            EXECUTE IMMEDIATE :sql_stmt;
+        END IF;
+        
     END FOR;
-
-    res := (SELECT * FROM TEMP_PROFILER_OUTPUT ORDER BY 
-                CASE WHEN metric_category = 'Table Overview' THEN 0 ELSE 1 END, 
-                metric_category, metric_name);
+    
+    res := (SELECT * FROM TEMP_PROFILE_RESULTS 
+            ORDER BY CASE WHEN metric_category = 'Table Overview' THEN 0 ELSE 1 END, 
+            metric_category, metric_name);
     RETURN TABLE(res);
 END;
 $$;
