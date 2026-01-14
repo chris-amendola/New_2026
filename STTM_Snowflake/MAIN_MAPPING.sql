@@ -96,7 +96,8 @@ INSERT INTO DICT_ABBREVIATIONS VALUES
     ('PREV', 'PREVIOUS', 'TEMPORAL'),
     ('ORIG', 'ORIGINAL', 'GENERAL'),
     ('TEMP', 'TEMPORARY', 'TECHNICAL'),
-    ('PERM', 'PERMANENT', 'TECHNICAL');
+    ('PERM', 'PERMANENT', 'TECHNICAL')
+    ;
 
 -- Schema and table exclusion list
 CREATE OR REPLACE TABLE CONFIG_EXCLUSIONS (
@@ -502,15 +503,16 @@ $$
                     CONFIDENCE_SCORE, MATCH_RANK, TRANSFORMATION_SQL, MATCHING_METHOD, MATCH_DETAILS
                 )
                 WITH src_emb AS (
-                    SELECT *, SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', tbl || ' ' || col) as emb FROM temp_source_cols
+                    SELECT *, SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', col || ' ' || tbl) as emb FROM temp_source_cols
                 ),
                 tgt_emb AS (
-                    SELECT *, SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', tbl || ' ' || col) as emb FROM temp_target_cols
+                    SELECT *, SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', col || ' ' || tbl) as emb FROM temp_target_cols
                 ),
                 scored AS (
                     SELECT s.db, s.schema, s.tbl, s.col, s.dtype, 
                            t.db as t_db, t.schema as t_schema, t.tbl as t_tbl, t.col as t_col, t.dtype as t_type,
-                           VECTOR_COSINE_SIMILARITY(s.emb, t.emb) as score,
+                           ( VECTOR_COSINE_SIMILARITY(s.emb, t.emb)*0.7+
+                            (JAROWINKLER_SIMILARITY(s.col,t.col)/100)*0.3) as score,   
                            -- Partition by target instead of source - find fit to target
            ROW_NUMBER() OVER (PARTITION BY t.db, t.schema, t.tbl, t.col ORDER BY score DESC) as rn
     FROM src_emb s CROSS JOIN tgt_emb t
