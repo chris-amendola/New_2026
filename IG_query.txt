@@ -1,0 +1,15 @@
+SELECT * 
+FROM GGASTRO.Fwk_AuditLog
+WHERE IDENTIFIER='2'
+  AND DATE<='2024-05-31' AND DATE>='2024-04-01'
+  AND ORGANIZATIONID in (SELECT ORGANIZATIONID 
+                         FROM GGASTRO.LOCATION
+                         WHERE NAME IN ('IGG-Peoria'))
+  AND USERID in (SELECT find.ID
+                 FROM prov_list as srch
+                 LEFT JOIN GGASTRO.Fwk_UserDetail as find 
+                   ON  UPPER(srch.LAST_NAME) = UPPER(find.LASTNAME)
+                   AND UPPER(srch.FIRST_NAME) = UPPER(find.FIRSTNAME)
+                 ORDER BY
+                    srch.LAST_NAME,
+                    srch.FIRST_NAME);
