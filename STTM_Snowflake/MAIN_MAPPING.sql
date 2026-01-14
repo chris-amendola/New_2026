@@ -1,3 +1,4 @@
+USE DATABASE STAR_DEV;
 -- =====================================================================
 -- SEMANTIC TABLE AND COLUMN MAPPING SOLUTION FOR SNOWFLAKE
 -- =====================================================================
@@ -156,149 +157,6 @@ CREATE OR REPLACE TABLE UNMAPPED_COLUMNS (
 -- HELPER FUNCTIONS
 -- =====================================================================
 
--- Function to calculate Jaro-Winkler similarity
-CREATE OR REPLACE FUNCTION JARO_WINKLER_SIMILARITY(str1 VARCHAR, str2 VARCHAR)
-RETURNS FLOAT
-LANGUAGE JAVASCRIPT
-AS
-$$
-    if (!STR1 || !STR2) return 0;
-    
-    var s1 = STR1.toUpperCase();
-    var s2 = STR2.toUpperCase();
-    
-    if (s1 === s2) return 1.0;
-    
-    var len1 = s1.length;
-    var len2 = s2.length;
-    
-    var maxDist = Math.floor(Math.max(len1, len2) / 2) - 1;
-    if (maxDist < 0) maxDist = 0;
-    
-    var matches = 0;
-    var transpositions = 0;
-    var s1Matches = new Array(len1).fill(false);
-    var s2Matches = new Array(len2).fill(false);
-    
-    // Find matches
-    for (var i = 0; i < len1; i++) {
-        var start = Math.max(0, i - maxDist);
-        var end = Math.min(i + maxDist + 1, len2);
-        
-        for (var j = start; j < end; j++) {
-            if (s2Matches[j] || s1[i] !== s2[j]) continue;
-            s1Matches[i] = true;
-            s2Matches[j] = true;
-            matches++;
-            break;
-        }
-    }
-    
-    if (matches === 0) return 0;
-    
-    // Find transpositions
-    var k = 0;
-    for (var i = 0; i < len1; i++) {
-        if (!s1Matches[i]) continue;
-        while (!s2Matches[k]) k++;
-        if (s1[i] !== s2[k]) transpositions++;
-        k++;
-    }
-    
-    var jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3;
-    
-    // Winkler modification
-    var prefix = 0;
-    for (var i = 0; i < Math.min(len1, len2, 4); i++) {
-        if (s1[i] === s2[i]) prefix++;
-        else break;
-    }
-    
-    return jaro + prefix * 0.1 * (1 - jaro);
-$$;
-
--- Function to calculate Levenshtein distance normalized
-CREATE OR REPLACE FUNCTION LEVENSHTEIN_SIMILARITY(str1 VARCHAR, str2 VARCHAR)
-RETURNS FLOAT
-LANGUAGE JAVASCRIPT
-AS
-$$
-    if (!STR1 || !STR2) return 0;
-    
-    var s1 = STR1.toUpperCase();
-    var s2 = STR2.toUpperCase();
-    
-    if (s1 === s2) return 1.0;
-    
-    var len1 = s1.length;
-    var len2 = s2.length;
-    
-    if (len1 === 0) return len2 === 0 ? 1.0 : 0.0;
-    if (len2 === 0) return 0.0;
-    
-    var matrix = [];
-    
-    for (var i = 0; i <= len1; i++) {
-        matrix[i] = [i];
-    }
-    
-    for (var j = 0; j <= len2; j++) {
-        matrix[0][j] = j;
-    }
-    
-    for (var i = 1; i <= len1; i++) {
-        for (var j = 1; j <= len2; j++) {
-            var cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-            matrix[i][j] = Math.min(
-                matrix[i - 1][j] + 1,
-                matrix[i][j - 1] + 1,
-                matrix[i - 1][j - 1] + cost
-            );
-        }
-    }
-    
-    var distance = matrix[len1][len2];
-    var maxLen = Math.max(len1, len2);
-    
-    return 1 - (distance / maxLen);
-$$;
-
--- Function to calculate phonetic similarity using Soundex
-CREATE OR REPLACE FUNCTION SOUNDEX_CODE(str VARCHAR)
-RETURNS VARCHAR
-LANGUAGE JAVASCRIPT
-AS
-$$
-    if (!STR || STR.length === 0) return '';
-    
-    var s = STR.toUpperCase().replace(/[^A-Z]/g, '');
-    if (s.length === 0) return '';
-    
-    var soundex = s[0];
-    var codes = {
-        'B': '1', 'F': '1', 'P': '1', 'V': '1',
-        'C': '2', 'G': '2', 'J': '2', 'K': '2', 'Q': '2', 'S': '2', 'X': '2', 'Z': '2',
-        'D': '3', 'T': '3',
-        'L': '4',
-        'M': '5', 'N': '5',
-        'R': '6'
-    };
-    
-    var prev = codes[s[0]] || '0';
-    
-    for (var i = 1; i < s.length && soundex.length < 4; i++) {
-        var code = codes[s[i]] || '0';
-        if (code !== '0' && code !== prev) {
-            soundex += code;
-        }
-        prev = code;
-    }
-    
-    while (soundex.length < 4) soundex += '0';
-    
-    return soundex.substring(0, 4);
-$$;
-
 -- Tokenization function
 CREATE OR REPLACE FUNCTION TOKENIZE_COLUMN_NAME(col_name VARCHAR)
 RETURNS ARRAY
@@ -357,7 +215,7 @@ $$
     
     // Fuzzy string similarity (Jaro-Winkler)
     var fuzzyStmt = snowflake.createStatement({
-        sqlText: "SELECT SEMANTIC_MAPPING.JARO_WINKLER_SIMILARITY(?, ?)",
+        sqlText: "SELECT SEMANTIC_MAPPING.JAROWINKLER_SIMILARITY(?, ?)",
         binds: [SOURCE_COL, TARGET_COL]
     });
     var fuzzyRs = fuzzyStmt.execute();
@@ -391,7 +249,7 @@ $$
     
     // Phonetic similarity
     var phoneticStmt = snowflake.createStatement({
-        sqlText: "SELECT SEMANTIC_MAPPING.SOUNDEX_CODE(?) = SEMANTIC_MAPPING.SOUNDEX_CODE(?)",
+        sqlText: "SELECT SEMANTIC_MAPPING.SOUNDEX(?) = SEMANTIC_MAPPING.SOUNDEX(?)",
         binds: [SOURCE_COL, TARGET_COL]
     });
     var phoneticRs = phoneticStmt.execute();
