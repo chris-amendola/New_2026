@@ -2,7 +2,7 @@ CREATE OR REPLACE PROCEDURE PROFILE_SOURCE_TABLE(
     P_DATABASE      STRING,
     P_SCHEMA        STRING,
     P_TABLE         STRING,
-    P_SAMPLE_PCT    NUMBER DEFAULT 100   -- 100 = full scan
+    P_SAMPLE_PCT    NUMBER DEFAULT 100
 )
 RETURNS TABLE (
     column_name                STRING,
@@ -22,49 +22,64 @@ EXECUTE AS CALLER
 AS
 $$
 DECLARE
-    sql_text STRING;
+    col_rs      RESULTSET;
+    profile_sql STRING;
+    final_rs    RESULTSET;
 BEGIN
 
+    /* 1️⃣ Pull column metadata dynamically */
+    col_rs := (
+        EXECUTE IMMEDIATE
+        'SELECT
+            column_name,
+            data_type,
+            is_nullable,
+            ordinal_position
+         FROM ' || P_DATABASE || '.INFORMATION_SCHEMA.COLUMNS
+         WHERE table_schema = ''' || P_SCHEMA || '''
+           AND table_name   = ''' || P_TABLE  || '''
+         ORDER BY ordinal_position'
+    );
+
+    /* 2️⃣ Build profiling SQL */
     SELECT LISTAGG(stmt, ' UNION ALL ')
-    INTO :sql_text
+    INTO :profile_sql
     FROM (
         SELECT
             'SELECT
-                ''' || c.column_name || '''                        AS column_name,
-                ''' || c.data_type   || '''                        AS data_type,
-                ''' || c.is_nullable || '''                        AS is_nullable,
-                COUNT(*)                                           AS rows_scanned,
-                COUNT(' || c.column_name || ')                     AS non_null_count,
-                COUNT(*) - COUNT(' || c.column_name || ')          AS null_count,
-                ROUND(COUNT(' || c.column_name || ') / NULLIF(COUNT(*),0) * 100, 2)
-                                                                  AS pct_populated,
-                COUNT(DISTINCT ' || c.column_name || ')             AS distinct_count,
+                ''' || column_name || ''' AS column_name,
+                ''' || data_type   || ''' AS data_type,
+                ''' || is_nullable || ''' AS is_nullable,
+                COUNT(*) AS rows_scanned,
+                COUNT(' || column_name || ') AS non_null_count,
+                COUNT(*) - COUNT(' || column_name || ') AS null_count,
+                ROUND(COUNT(' || column_name || ') / NULLIF(COUNT(*),0) * 100, 2)
+                    AS pct_populated,
+                COUNT(DISTINCT ' || column_name || ') AS distinct_count,
                 ROUND(
-                    COUNT(DISTINCT ' || c.column_name || ') /
-                    NULLIF(COUNT(' || c.column_name || '),0) * 100, 2
-                )                                                   AS pct_distinct_non_null,
-                CAST(MIN(' || c.column_name || ') AS STRING)       AS min_value,
-                CAST(MAX(' || c.column_name || ') AS STRING)       AS max_value
-            FROM ' || P_DATABASE || '.' || P_SCHEMA || '.' || P_TABLE || '
-            ' ||
-            CASE
-                WHEN P_SAMPLE_PCT < 100
-                    THEN ' SAMPLE (' || P_SAMPLE_PCT || ')'
-                ELSE ''
-            END
-            AS stmt
-        FROM IDENTIFIER(P_DATABASE || '.INFORMATION_SCHEMA.COLUMNS') c
-        WHERE c.table_schema = P_SCHEMA
-          AND c.table_name   = P_TABLE
-        ORDER BY c.ordinal_position
+                    COUNT(DISTINCT ' || column_name || ') /
+                    NULLIF(COUNT(' || column_name || '),0) * 100, 2
+                ) AS pct_distinct_non_null,
+                CAST(MIN(' || column_name || ') AS STRING) AS min_value,
+                CAST(MAX(' || column_name || ') AS STRING) AS max_value
+             FROM ' || P_DATABASE || '.' || P_SCHEMA || '.' || P_TABLE ||
+             CASE
+                 WHEN P_SAMPLE_PCT < 100
+                     THEN ' SAMPLE (' || P_SAMPLE_PCT || ')'
+                 ELSE ''
+             END
+        FROM TABLE(col_rs)
     );
 
-    RETURN TABLE(
-        EXECUTE IMMEDIATE :sql_text
-    );
+    /* 3️⃣ Execute profiling SQL */
+    final_rs := (EXECUTE IMMEDIATE :profile_sql);
+
+    /* 4️⃣ Return results */
+    RETURN TABLE(final_rs);
 
 END;
 $$;
+
 
 CREATE OR REPLACE VIEW STM_SOURCE_PROFILE AS
 SELECT
