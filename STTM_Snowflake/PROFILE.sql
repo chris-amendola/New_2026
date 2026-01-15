@@ -1,249 +1,107 @@
---
--- What is it *really* (type, max length, numeric scale, true nullability)?
--- How populated is it?
--- How unique is it (identifier candidate)?
--- What values actually appear (domains, min/max, outliers)?
--- Is it stable or volatile?
--- Does it *smell* like PHI, a key, a code, or a timestamp?
-
--- Single pass per column
-
-SET PROFILE_DB     = 'SOURCE_DB';
-SET PROFILE_SCHEMA = 'SOURCE_SCHEMA';
-SET PROFILE_TABLE  = 'SOURCE_TABLE';
-
-
----
-
--- 1 Column metadata + physical characteristics
-
---This anchors the profile and catches upstream schema lies.
-
-WITH column_metadata AS (
-    SELECT
-        table_catalog,
-        table_schema,
-        table_name,
-        column_name,
-        ordinal_position,
-        data_type,
-        character_maximum_length,
-        numeric_precision,
-        numeric_scale,
-        is_nullable
-    FROM IDENTIFIER($PROFILE_DB || '.INFORMATION_SCHEMA.COLUMNS')
-    WHERE table_schema = $PROFILE_SCHEMA
-      AND table_name   = $PROFILE_TABLE
+CREATE OR REPLACE PROCEDURE PROFILE_SOURCE_TABLE(
+    P_DATABASE      STRING,
+    P_SCHEMA        STRING,
+    P_TABLE         STRING,
+    P_SAMPLE_PCT    NUMBER DEFAULT 100   -- 100 = full scan
 )
-SELECT *
-FROM column_metadata
-ORDER BY ordinal_position;
-
-
--- 2 Core data profiling metrics (population, uniqueness, sparsity)
-
-WITH base AS (
-    SELECT *
-    FROM IDENTIFIER($PROFILE_DB || '.' || $PROFILE_SCHEMA || '.' || $PROFILE_TABLE)
-),
-row_counts AS (
-    SELECT COUNT(*) AS total_rows FROM base
-),
-column_profile AS (
-    SELECT
-        column_name,
-
-        COUNT(*)                                    AS rows_scanned,
-        COUNT(column_value)                         AS non_null_count,
-        COUNT(*) - COUNT(column_value)              AS null_count,
-
-        COUNT(DISTINCT column_value)                AS distinct_count,
-
-        MIN(column_value)                           AS min_value,
-        MAX(column_value)                           AS max_value
-
-    FROM base
-    UNPIVOT(column_value FOR column_name IN (*))
+RETURNS TABLE (
+    column_name                STRING,
+    data_type                  STRING,
+    is_nullable                STRING,
+    rows_scanned               NUMBER,
+    non_null_count             NUMBER,
+    null_count                 NUMBER,
+    pct_populated              NUMBER,
+    distinct_count             NUMBER,
+    pct_distinct_non_null      NUMBER,
+    min_value                  STRING,
+    max_value                  STRING
 )
-SELECT
-    p.column_name,
-    r.total_rows,
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+DECLARE
+    sql_text STRING;
+BEGIN
 
-    p.non_null_count,
-    ROUND(p.non_null_count / r.total_rows * 100, 2) AS pct_populated,
-
-    p.null_count,
-    ROUND(p.null_count / r.total_rows * 100, 2)     AS pct_null,
-
-    p.distinct_count,
-    ROUND(p.distinct_count / NULLIF(p.non_null_count,0) * 100, 2)
-                                                    AS pct_distinct_non_null,
-
-    p.min_value,
-    p.max_value
-
-FROM column_profile p
-CROSS JOIN row_counts r
-ORDER BY p.column_name;
-
--- For STM
--- `pct_populated < 95%` → nullable target or late-arriving data
--- `pct_distinct_non_null ≈ 100%` → key candidate
--- min/max → bad dates, sentinel values (`1900-01-01`, `9999-12-31`)
-
----
-
--- 3 Length & format profiling (text fields)
-
--- Catches **free-text pretending to be codes**.
-
-WITH base AS (
-    SELECT *
-    FROM IDENTIFIER($PROFILE_DB || '.' || $PROFILE_SCHEMA || '.' || $PROFILE_TABLE)
-),
-text_profile AS (
-    SELECT
-        column_name,
-        MIN(LENGTH(column_value)) AS min_length,
-        MAX(LENGTH(column_value)) AS max_length,
-        AVG(LENGTH(column_value)) AS avg_length
-    FROM base
-    UNPIVOT(column_value FOR column_name IN (*))
-    WHERE TYPEOF(column_value) = 'VARCHAR'
-      AND column_value IS NOT NULL
-    GROUP BY column_name
-)
-SELECT *
-FROM text_profile
-ORDER BY column_name;
-
-
--- Red flags this exposes**
-
-- `avg_length ≈ max_length` → fixed-width codes
-- `max_length >> expected` → comments, concatenations, HL7 garbage
-- `min_length = 0` → empty strings masquerading as NULLs
-
----
-
--- 4 Domain frequency (top values per column)
-
--- Essential for **code mappings, enums, flags, and dirty booleans**.
-
-WITH base AS (
-    SELECT *
-    FROM IDENTIFIER($PROFILE_DB || '.' || $PROFILE_SCHEMA || '.' || $PROFILE_TABLE)
-),
-domain_counts AS (
-    SELECT
-        column_name,
-        column_value,
-        COUNT(*) AS value_count
-    FROM base
-    UNPIVOT(column_value FOR column_name IN (*))
-    WHERE column_value IS NOT NULL
-    GROUP BY column_name, column_value
-),
-ranked_domains AS (
-    SELECT
-        *,
-        ROW_NUMBER() OVER (
-            PARTITION BY column_name
-            ORDER BY value_count DESC
-        ) AS value_rank
-    FROM domain_counts
-)
-SELECT
-    column_name,
-    column_value,
-    value_count
-FROM ranked_domains
-WHERE value_rank <= 10
-ORDER BY column_name, value_rank;
-
--- STM payoff**
-
-- Exposes `Y/N/Yes/No/1/0/True/False`
-- Reveals ICD/CPT/LOINC shape *before* formal mapping
-- Flags junk placeholders (`UNKNOWN`, `ZZZ`, `TEST`)
-
----
-
---5 Identifier & PHI heuristics (practical, not perfect)
-
---You *want* these signals early.
-
-WITH base AS (
-    SELECT *
-    FROM IDENTIFIER($PROFILE_DB || '.' || $PROFILE_SCHEMA || '.' || $PROFILE_TABLE)
-),
-id_signals AS (
-    SELECT
-        column_name,
-
-        COUNT(DISTINCT column_value)        AS distinct_count,
-        COUNT(column_value)                 AS non_null_count,
-
-        MAX(LENGTH(column_value))           AS max_length,
-
-        SUM(
+    SELECT LISTAGG(stmt, ' UNION ALL ')
+    INTO :sql_text
+    FROM (
+        SELECT
+            'SELECT
+                ''' || c.column_name || '''                        AS column_name,
+                ''' || c.data_type   || '''                        AS data_type,
+                ''' || c.is_nullable || '''                        AS is_nullable,
+                COUNT(*)                                           AS rows_scanned,
+                COUNT(' || c.column_name || ')                     AS non_null_count,
+                COUNT(*) - COUNT(' || c.column_name || ')          AS null_count,
+                ROUND(COUNT(' || c.column_name || ') / NULLIF(COUNT(*),0) * 100, 2)
+                                                                  AS pct_populated,
+                COUNT(DISTINCT ' || c.column_name || ')             AS distinct_count,
+                ROUND(
+                    COUNT(DISTINCT ' || c.column_name || ') /
+                    NULLIF(COUNT(' || c.column_name || '),0) * 100, 2
+                )                                                   AS pct_distinct_non_null,
+                CAST(MIN(' || c.column_name || ') AS STRING)       AS min_value,
+                CAST(MAX(' || c.column_name || ') AS STRING)       AS max_value
+            FROM ' || P_DATABASE || '.' || P_SCHEMA || '.' || P_TABLE || '
+            ' ||
             CASE
-                WHEN column_value RLIKE '^[0-9]{8,}$' THEN 1
-                ELSE 0
+                WHEN P_SAMPLE_PCT < 100
+                    THEN ' SAMPLE (' || P_SAMPLE_PCT || ')'
+                ELSE ''
             END
-        ) AS numeric_id_like_count
+            AS stmt
+        FROM IDENTIFIER(P_DATABASE || '.INFORMATION_SCHEMA.COLUMNS') c
+        WHERE c.table_schema = P_SCHEMA
+          AND c.table_name   = P_TABLE
+        ORDER BY c.ordinal_position
+    );
 
-    FROM base
-    UNPIVOT(column_value FOR column_name IN (*))
-    WHERE column_value IS NOT NULL
-    GROUP BY column_name
-)
+    RETURN TABLE(
+        EXECUTE IMMEDIATE :sql_text
+    );
+
+END;
+$$;
+
+CREATE OR REPLACE VIEW STM_SOURCE_PROFILE AS
 SELECT
     column_name,
 
-    ROUND(distinct_count / NULLIF(non_null_count,0) * 100, 2)
-        AS pct_unique,
+    data_type,
+    is_nullable,
 
-    max_length,
+    rows_scanned,
+    pct_populated,
 
-    ROUND(numeric_id_like_count / NULLIF(non_null_count,0) * 100, 2)
-        AS pct_numeric_id_like
+    distinct_count,
+    pct_distinct_non_null,
 
-FROM id_signals
-ORDER BY pct_unique DESC;
+    min_value,
+    max_value,
 
---Interpretation
+    /* Analyst-facing interpretation hints */
+    CASE
+        WHEN pct_distinct_non_null >= 99 THEN 'Likely Identifier'
+        WHEN pct_distinct_non_null BETWEEN 5 AND 95 THEN 'Reference / Code'
+        ELSE 'Low Information'
+    END AS inferred_role,
 
--- `pct_unique ~100%` → primary / natural key candidate
--- high numeric-ID-like → MRN, encounter_id, claim_id
--- combine with name patterns (`NAME`, `DOB`, `SSN`) for PHI tagging
+    CASE
+        WHEN data_type ILIKE '%DATE%' OR data_type ILIKE '%TIME%'
+            THEN 'Temporal'
+        WHEN data_type ILIKE '%CHAR%' AND pct_distinct_non_null < 5
+            THEN 'Enum / Flag'
+        ELSE 'Review'
+    END AS mapping_hint
 
----
-
--- 6 STM-ready summary view (what I hand to architects)
-
-CREATE OR REPLACE VIEW PROFILE_SOURCE_TABLE_SUMMARY AS
-SELECT
-    m.column_name,
-    m.data_type,
-    m.is_nullable,
-
-    p.pct_populated,
-    p.pct_distinct_non_null,
-
-    t.avg_length,
-    t.max_length,
-
-    d.pct_unique
-
-FROM column_metadata m
-LEFT JOIN population_stats p ON m.column_name = p.column_name
-LEFT JOIN text_profile     t ON m.column_name = t.column_name
-LEFT JOIN id_signals       d ON m.column_name = d.column_name;
-
---This becomes:
-
---STM worksheet input
---Automated mapping hints
---Governance artifact
---Evidence for “why this target field is nullable”
+FROM TABLE(
+    PROFILE_SOURCE_TABLE(
+        'SRC_DB',
+        'CLINICAL',
+        'ENCOUNTER',
+        10
+    )
+);
