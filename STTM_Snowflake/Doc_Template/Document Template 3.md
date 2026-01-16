@@ -1,10 +1,3 @@
-
-A clean multi‑sheet layout gives you the structure of a full STM workbook without actually generating a file. Below is a **complete, production‑grade Excel workbook design** with **six sheets**, each structured so you can drop them directly into Excel or use them as a schema for programmatic export.
-
-I’ve designed this the way a healthcare data engineering team would expect it: normalized, auditable, and ready for population by hand or pipeline.
-
----
-
 # **📘 Multi‑Sheet Excel Layout for Healthcare STM**
 
 Each sheet below includes:
@@ -12,8 +5,6 @@ Each sheet below includes:
 - A recommended sheet name
 - Column definitions
 - Purpose and usage notes
-
-This gives you a fully‑specified workbook structure.
 
 ---
 
