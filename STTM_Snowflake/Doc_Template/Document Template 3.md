@@ -117,18 +117,6 @@ Each sheet below includes:
 
 ---
 
-# If you want, I can also build:
-
-- A **Python/Pandas script** that generates this workbook structure
-- A **SQLite/Postgres schema** to store STM sheets as relational tables
-- A **fully populated example STM** for a specific healthcare table (e.g., OMOP PERSON or FHIR Observation)
-
-Just tell me which direction you want to go next.
-
-A solid STM registry needs to feel like a real system, not just a collection of tables. Below is a **clean, normalized, production‑grade relational schema** that works in **both SQLite and Postgres** with no changes. It mirrors the six‑sheet Excel layout you’re using and adds the relational integrity you’d expect in a healthcare‑grade pipeline.
-
-I’ve designed this so you can:
-
 - Store multiple STM documents
 - Version them cleanly
 - Capture field mappings, terminology rules, DQ rules, lineage, and exceptions
@@ -305,33 +293,11 @@ CREATE TABLE stm_appendix (
     FOREIGN KEY (stm_id) REFERENCES stm_document(stm_id)
 );
 ```
-
----
-
-# If you want to go further
-
-I can build:
-
-- A **fully normalized ERD diagram**
-- A **SQLite/Postgres migration script**
-- A **Python loader** that writes STM Excel sheets into this schema
-- A **semantic matcher output writer** that populates `stm_field_mapping` automatically
-- A **FHIR‑specific STM registry extension**
-
-Just tell me where you want to take this next.
-
-Below is a clean, production‑ready version of both deliverables you asked for:
-
-1. **A full JSON Schema representation of the STM template**
-2. **An Excel‑ready tabular version** (structured so you can paste directly into Excel or export from a dataframe)
-
-I’ve kept everything tool‑agnostic, extensible, and aligned with the detailed STM structure you and I have been building.
-
 ---
 
 # 1) JSON Schema Version of the STM Template
 
-This schema is written in **JSON Schema Draft‑07** and is suitable for validation, automated STM generation, or use as a canonical artifact in your pipeline.
+This schema is written in **JSON Schema Draft‑07** .
 
 ```json
 {
@@ -517,9 +483,6 @@ This schema is written in **JSON Schema Draft‑07** and is suitable for validat
 
 # 2) Excel‑Ready Tabular Version
 
-Below is a **single unified table** representing the core STM field‑level mapping section. This is the part that always ends up in Excel, regardless of the broader STM document.
-
-You can paste this directly into Excel or import it as CSV.
 
 |Target Field|Target Datatype|Target Constraints|Source Field(s)|Source Datatype|Transformation Logic|Terminology Mapping|Default Value|Null Handling|Data Quality Rules|Semantic Match Score|Notes|
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -527,11 +490,3 @@ You can paste this directly into Excel or import it as CSV.
 |||||||||||||
 |||||||||||||
 
-If you prefer, I can also generate:
-
-- A **multi‑sheet Excel layout** (metadata, terminology, field mappings, DQ rules, lineage, exceptions)
-- A **CSV export**
-- A **Python/Pandas template** that outputs this structure automatically
-- A **SQLite/Postgres STM registry schema**
-
-Just tell me which direction you want to take this next.
