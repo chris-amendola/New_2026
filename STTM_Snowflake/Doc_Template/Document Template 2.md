@@ -1,5 +1,3 @@
-Below is a tool‑agnostic, healthcare‑oriented, source‑to‑target mapping template that can be used either as a manually maintained document or as an output format from an automated process.[[bryteflow](https://bryteflow.com/source-to-target-mapping-guide-what-why-how/)]​
-
 ---
 
 ## 1. Document metadata
@@ -35,7 +33,7 @@ These fields describe the mapping specification as an artifact (useful for gover
 
 ## 2. Scope and context
 
-This section or tab anchors the mapping to its business and technical purpose.[[kms-technology](https://kms-technology.com/blog/data-mapping-in-healthcare/)]​
+This section or tab anchors the mapping to its business and technical purpose.​
 
 - Business Purpose / Use Cases
     
