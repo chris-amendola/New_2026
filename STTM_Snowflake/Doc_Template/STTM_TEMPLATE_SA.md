@@ -14,3 +14,17 @@
 | Version                | Semantic version (e.g., 2.1.0)                             |
 | Change Type            | New / Enhancement / Bug Fix                                |
 | Approval Status        | Draft / Approved / Deprecated                              |
+
+#### Source System Overview
+
+|Field|Description|
+|---|---|
+|Source System Name|gGastro|
+|Vendor|Modmed|
+|Module / Subsystem||
+|Source Data Owner||
+|Source Update Frequency||
+|Data Latency|Typical / worst case|
+|Correction Behavior|Overwrite / Append / Void-Replace|
+|Historical Availability||
+|Known Data Quality Issues||
