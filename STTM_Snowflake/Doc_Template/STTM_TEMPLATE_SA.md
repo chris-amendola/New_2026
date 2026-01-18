@@ -33,6 +33,7 @@
 #### 2.2 Source Table Inventory
 
 |Source Schema|Source Table|Description|Row Grain|
+|-------------|------------|-----------|---------|
 |GGASTRO|STG_APPOINTMENT|{description}|{row_grain}|
 |GGASTRO|STG_BILLINGADJUSTMENTCODE|{description}|{row_grain}|
 |GGASTRO|STG_BILLINGCOSTCENTER|{description}|{row_grain}|
