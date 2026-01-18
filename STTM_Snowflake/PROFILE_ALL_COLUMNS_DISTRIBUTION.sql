@@ -33,7 +33,12 @@ CREATE OR REPLACE TABLE sep_column_distribution (
     -- Metadata
     profiling_run_id        VARCHAR,         -- allows grouping multiple runs
     profiling_mode          VARCHAR,         -- FULL | SAMPLE | INCREMENTAL
-    created_at              TIMESTAMP_NTZ
+    created_at              TIMESTAMP_NTZ    DEFAULT CURRENT_TIMESTAMP,
+
+    -- Convenience
+    CONSTRAINT pk_sep_column_distribution
+        PRIMARY KEY (table_schema, table_name, column_name, created_at)
+);
 
 
 -- =====================================================================
