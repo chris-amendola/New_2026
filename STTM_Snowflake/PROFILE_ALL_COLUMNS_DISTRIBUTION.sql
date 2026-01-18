@@ -1,117 +1,211 @@
-DROP TABLE IF EXISTS STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS;
-CREATE OR REPLACE TABLE STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS
-(
-  table_name           STRING,
-  column_name          STRING,
-  top_values           ARRAY,   -- array of {value, pct}
-  entropy_score        NUMBER,
-  skewness             NUMBER,
-  modal_value_pct      NUMBER,
-  unit_density     STRING
-);
-
-CREATE OR REPLACE PROCEDURE PROFILE_ALL_COLUMNS_DISTRIBUTION(
-    DB_NAME STRING, 
-    SCHEMA_NAME STRING, 
-    TABLE_NAME STRING,
-    DATE_COLUMN STRING
+CREATE OR REPLACE PROCEDURE compute_column_distributions(
+    p_table_name VARCHAR,
+    p_temporal_column VARCHAR
 )
-RETURNS STRING
+RETURNS VARCHAR
 LANGUAGE SQL
-EXECUTE AS CALLER
 AS
+$$
 DECLARE
-    dynamic_query STRING;
-    FULL_TABLE_PATH STRING := :DB_NAME || '.' || :SCHEMA_NAME || '.' || :TABLE_NAME;
-    INFO_SCHEMA STRING := :DB_NAME || '.INFORMATION_SCHEMA.COLUMNS';
-    column_cursor CURSOR FOR 
-        SELECT column_name 
-        FROM IDENTIFIER(?) 
-        WHERE table_schema = ? 
-          AND table_name = ?
-          AND column_name NOT IN ('ETL_CREATED_DATE','ETL_UPDATED_DATE','ETL_CREATED_BY','ETL_UPDATED_BY')
-          AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT','BOOLEAN'); -- Exclude semi-structured to prevent errors
+    v_column_name VARCHAR;
+    v_data_type VARCHAR;
+    v_sql VARCHAR;
+    v_result_count INTEGER DEFAULT 0;
+    
+    -- Cursor to get all eligible columns
+    c_columns CURSOR FOR
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_schema = CURRENT_SCHEMA()
+          AND table_name = p_table_name
+          AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
+        ORDER BY ordinal_position;
 BEGIN
-    -- Open the cursor using the session's information schema
-    -- Note: We use the DB_NAME provided to point to the correct Information Schema
-    OPEN column_cursor USING (:INFO_SCHEMA, :SCHEMA_NAME, :TABLE_NAME);
-
-    FOR row_variable IN column_cursor DO
-        LET col_name STRING := row_variable.column_name;
-
-        dynamic_query := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS (
-                            table_name, column_name, top_values, entropy_score, skewness, modal_value_pct, unit_density) ' ||
-            'WITH base_stats AS (
-                SELECT 
-                    ' || col_name || ' AS val,
-                    COUNT(*) AS val_cnt,
-                    SUM(COUNT(*)) OVER() AS total_cnt
-                FROM IDENTIFIER(''' || FULL_TABLE_PATH || ''')
-                GROUP BY 1 
+    -- Open cursor and loop through columns
+    OPEN c_columns;
+    FOR record IN c_columns DO
+        v_column_name := record.column_name;
+        v_data_type := record.data_type;
+        
+        -- Build dynamic SQL based on data type
+        IF v_data_type IN ('NUMBER', 'FLOAT', 'DOUBLE', 'INTEGER', 'BIGINT', 'SMALLINT', 'TINYINT', 'BYTEINT', 'DECIMAL', 'NUMERIC') THEN
+            -- Numeric columns: use statistical skewness
+            v_sql := '
+            WITH base AS (
+                SELECT
+                    ' || v_column_name || '::VARCHAR AS val,
+                    ' || v_column_name || ' AS num_val,
+                    COUNT(*) AS cnt
+                FROM ' || p_table_name || '
+                WHERE ' || v_column_name || ' IS NOT NULL
+                GROUP BY ' || v_column_name || '
             ),
-            entropy AS (
-               SELECT 
-                   COALESCE( 
-                            SUM( 
-                                CASE 
-                                  WHEN total_cnt > 0 AND val_cnt > 0 
-                                  THEN -1 * DIV0(val_cnt,total_cnt) * (LN(NULLIF(DIV0(val_cnt, total_cnt), 0)) / LN(2)) 
-                                  ELSE 0 
-                                END ), 0)
-                                AS entropy_score FROM base_stats
+            totals AS (
+                SELECT SUM(cnt) AS total_cnt
+                FROM base
             ),
-            ranked_stats AS (
-                SELECT 
-                    val, 
-                    val_cnt,
-                    total_cnt,
-                    ROW_NUMBER() OVER (ORDER BY val_cnt DESC) as rnk
-                FROM base_stats
+            ranked AS (
+                SELECT
+                    val,
+                    num_val,
+                    cnt,
+                    cnt / total_cnt AS pct,
+                    ROW_NUMBER() OVER (ORDER BY cnt DESC) AS rn
+                FROM base
+                CROSS JOIN totals
             ),
             top_vals AS (
-                SELECT 
-                    ARRAY_AGG(val) WITHIN GROUP (ORDER BY val_cnt DESC) AS top_values,
-                    MAX(val_cnt) / NULLIF(MAX(total_cnt), 0) AS modal_value_pct
-                FROM ranked_stats
-                WHERE rnk <= 5
+                SELECT
+                    ARRAY_AGG(
+                        OBJECT_CONSTRUCT(
+                            ''value'', val,
+                            ''pct'', ROUND(pct, 6)
+                        )
+                        ORDER BY pct DESC
+                    ) AS top_values,
+                    MAX(pct) AS modal_value_pct
+                FROM ranked
+                WHERE rn <= 10
+            ),
+            entropy AS (
+                SELECT
+                    -SUM(CASE WHEN pct > 0 THEN pct * LOG(2, pct) ELSE 0 END) AS entropy_score
+                FROM ranked
+            ),
+            stats AS (
+                SELECT
+                    AVG(num_val) AS mean_val,
+                    STDDEV(num_val) AS stddev_val,
+                    COUNT(*) AS n
+                FROM ranked
             ),
             skew AS (
-                SELECT 
-                    SKEW(
-                         COALESCE(
-                                  -- 1. Try to treat it as a number (Legacy numeric strings)
-                                  TRY_TO_DOUBLE(' || col_name ||'::VARCHAR),
-                                  -- 2. Try to treat it as a Boolean (Native or "true"/"false" strings)
-                                  -- Maps TRUE/TRUE-like to 1.0, FALSE/FALSE-like to 0.0
-                                  IFF(TRY_TO_BOOLEAN(' || col_name || '::VARCHAR), 1.0, 0.0))
-                                 ) AS skewness
-                            FROM IDENTIFIER(''' || FULL_TABLE_PATH ||''')
+                SELECT
+                    CASE 
+                        WHEN s.stddev_val > 0 AND s.n > 2 THEN
+                            SUM(POWER((r.num_val - s.mean_val) / s.stddev_val, 3)) * s.n / ((s.n - 1) * (s.n - 2))
+                        ELSE 0
+                    END AS skewness
+                FROM ranked r
+                CROSS JOIN stats s
             ),
             temporal AS (
-                SELECT COUNT(*)/COUNT(DISTINCT ' || DATE_COLUMN || ') AS unit_density
-                FROM IDENTIFIER(''' || FULL_TABLE_PATH || ''')
+                SELECT
+                    CASE
+                        WHEN COUNT(DISTINCT ' || p_temporal_column || ') > 0
+                            THEN ROUND(COUNT(*) / COUNT(DISTINCT ' || p_temporal_column || '), 2)::VARCHAR || '' per day''
+                        ELSE NULL
+                    END AS temporal_density
+                FROM ' || p_table_name || '
+                WHERE ' || v_column_name || ' IS NOT NULL
+                  AND ' || p_temporal_column || ' IS NOT NULL
             )
+            INSERT INTO sep_column_distribution
             SELECT
-                ''' || FULL_TABLE_PATH || ''',
-                ''' || col_name || ''',
+                ''' || p_table_name || ''' AS table_name,
+                ''' || v_column_name || ''' AS column_name,
                 tv.top_values,
                 e.entropy_score,
-                s.skewness,
+                sk.skewness,
                 tv.modal_value_pct,
-                t.unit_density
+                t.temporal_density,
+                CURRENT_TIMESTAMP AS created_at
             FROM top_vals tv
             CROSS JOIN entropy e
-            CROSS JOIN skew s
-            CROSS JOIN temporal t
-            ';
-
-        EXECUTE IMMEDIATE :dynamic_query;
+            CROSS JOIN skew sk
+            CROSS JOIN temporal t';
+            
+        ELSE
+            -- String, Boolean, and other non-numeric types: use frequency-based skewness
+            v_sql := '
+            WITH base AS (
+                SELECT
+                    ' || v_column_name || '::VARCHAR AS val,
+                    COUNT(*) AS cnt
+                FROM ' || p_table_name || '
+                WHERE ' || v_column_name || ' IS NOT NULL
+                GROUP BY ' || v_column_name || '
+            ),
+            totals AS (
+                SELECT SUM(cnt) AS total_cnt
+                FROM base
+            ),
+            ranked AS (
+                SELECT
+                    val,
+                    cnt,
+                    cnt / total_cnt AS pct,
+                    ROW_NUMBER() OVER (ORDER BY cnt DESC) AS rn
+                FROM base
+                CROSS JOIN totals
+            ),
+            top_vals AS (
+                SELECT
+                    ARRAY_AGG(
+                        OBJECT_CONSTRUCT(
+                            ''value'', val,
+                            ''pct'', ROUND(pct, 6)
+                        )
+                        ORDER BY pct DESC
+                    ) AS top_values,
+                    MAX(pct) AS modal_value_pct
+                FROM ranked
+                WHERE rn <= 10
+            ),
+            entropy AS (
+                SELECT
+                    -SUM(CASE WHEN pct > 0 THEN pct * LOG(2, pct) ELSE 0 END) AS entropy_score
+                FROM ranked
+            ),
+            skew AS (
+                SELECT
+                    CASE 
+                        WHEN AVG(cnt) > 0 THEN MAX(cnt)::FLOAT / AVG(cnt)
+                        ELSE 0
+                    END AS skewness
+                FROM base
+            ),
+            temporal AS (
+                SELECT
+                    CASE
+                        WHEN COUNT(DISTINCT ' || p_temporal_column || ') > 0
+                            THEN ROUND(COUNT(*) / COUNT(DISTINCT ' || p_temporal_column || '), 2)::VARCHAR || '' per day''
+                        ELSE NULL
+                    END AS temporal_density
+                FROM ' || p_table_name || '
+                WHERE ' || v_column_name || ' IS NOT NULL
+                  AND ' || p_temporal_column || ' IS NOT NULL
+            )
+            INSERT INTO sep_column_distribution
+            SELECT
+                ''' || p_table_name || ''' AS table_name,
+                ''' || v_column_name || ''' AS column_name,
+                tv.top_values,
+                e.entropy_score,
+                sk.skewness,
+                tv.modal_value_pct,
+                t.temporal_density,
+                CURRENT_TIMESTAMP AS created_at
+            FROM top_vals tv
+            CROSS JOIN entropy e
+            CROSS JOIN skew sk
+            CROSS JOIN temporal t';
+        END IF;
+        
+        -- Execute the dynamic SQL
+        EXECUTE IMMEDIATE v_sql;
+        v_result_count := v_result_count + 1;
+        
     END FOR;
-
-    //RETURN 'Statistics successfully updated for all columns in ' || FULL_TABLE_PATH;
-    RETURN DYNAMIC_QUERY;
+    CLOSE c_columns;
+    
+    RETURN 'Successfully computed distribution metrics for ' || v_result_count || ' columns in table ' || p_table_name;
+    
+EXCEPTION
+    WHEN OTHER THEN
+        RETURN 'Error: ' || SQLERRM || ' - Column: ' || IFNULL(v_column_name, 'N/A');
 END;
+$$;
 
-CALL PROFILE_ALL_COLUMNS_DISTRIBUTION('STAR_DEV','DIM_MODEL','FACT_ENCOUNTER_PROCEDURE','DIM_DATE_KEY');
-
---SELECT * FROM STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS; 
+-- Example usage:
+-- CALL compute_column_distributions('procedure_fact', 'procedure_date');
