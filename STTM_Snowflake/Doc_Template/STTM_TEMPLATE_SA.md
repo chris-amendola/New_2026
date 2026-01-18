@@ -8,7 +8,8 @@
 | Source System(s)       | gGastro-Modmed                                             |
 | Target System          | STAR                                                       |
 | Target Model           | DIM_MODEL                                                  |                                    
-| Author(s)              | Chris Amendola                                             |
+| Architect              |                                                            |
+| Analyst                |                                                            |
 | Reviewer(s)            |                                                            |
 | Effective Date         | {Date mapping becomes active}                              |
 | Version                | Semantic version (e.g., 2.1.0)                             |
