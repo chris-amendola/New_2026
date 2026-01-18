@@ -30,7 +30,7 @@
 |Historical Availability||
 |Known Data Quality Issues||
 
-#### 2.2 Source Table Inventory
+#### Source Table Inventory
 
 |Source Schema|Source Table|Description|Row Grain|
 |-------------|------------|-----------|---------|
@@ -191,6 +191,7 @@
 |GGASTRO|STG_SERVICESTAFF|{description}|{row_grain}|
 |GGASTRO|STG_TEST08272024|{description}|{row_grain}|
 
+### Target Model Profile
 |Target Schema|Target Table|Descriptions|Target Grain |Slowly Changing Behavior|
 |-------------|------------|------------|-------------|------------------------|
 |DIM_MODEL|DIM_APPOINTMENT_STATUS|{description}|{row_grain}|{Slowly Changing Behavior}|
