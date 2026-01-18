@@ -1,3 +1,41 @@
+CREATE OR REPLACE TABLE sep_column_distribution (
+    -- Identification
+    table_schema            VARCHAR         NOT NULL,
+    table_name              VARCHAR         NOT NULL,
+    column_name             VARCHAR         NOT NULL,
+
+    -- Type & role inference
+    inferred_data_type      VARCHAR,        -- NUMERIC | STRING | BOOLEAN | DATE | etc
+    primary_role            VARCHAR,        -- ID | MEASURE | CODE | FLAG | TEXT
+    secondary_roles         ARRAY,           -- e.g. ['FOREIGN_KEY','SURROGATE_KEY']
+
+    -- Cardinality & completeness
+    row_count               NUMBER,
+    non_null_count          NUMBER,
+    distinct_count          NUMBER,
+    distinct_ratio          FLOAT,           -- distinct / non-null
+
+    -- Distribution summaries
+    top_values              VARIANT,         -- array of {value, pct}
+    modal_value_pct         FLOAT,
+    entropy_score           FLOAT,
+    skewness                FLOAT,
+
+    -- Numeric-only stats (NULL for non-numeric)
+    min_value               FLOAT,
+    max_value               FLOAT,
+    mean_value              FLOAT,
+    stddev_value            FLOAT,
+
+    -- Temporal behavior
+    temporal_density        VARCHAR,         -- e.g. "124.6 per day"
+
+    -- Metadata
+    profiling_run_id        VARCHAR,         -- allows grouping multiple runs
+    profiling_mode          VARCHAR,         -- FULL | SAMPLE | INCREMENTAL
+    created_at              TIMESTAMP_NTZ
+
+
 -- =====================================================================
 -- STM UNPIVOT PROFILER (ZERO-PROCEDURE, METADATA-DRIVEN)
 -- Author intent: Single-pass column profiling + role classification
