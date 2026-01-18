@@ -32,5 +32,5 @@
 
 #### 2.2 Source Table Inventory
 
-|Source Schema|Source Table|Description|Row Grain|Change Capture Method|Volatility|
-|---|---|---|---|---|---|
+|Source Schema|Source Table|Description|Row Grain|
+|---|---|---|---|
