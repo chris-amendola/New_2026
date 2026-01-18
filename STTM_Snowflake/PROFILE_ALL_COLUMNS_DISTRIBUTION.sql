@@ -1,82 +1,76 @@
-CREATE OR REPLACE TABLE sep_column_distribution (
-    -- Identification
-    table_schema            VARCHAR         NOT NULL,
-    table_name              VARCHAR         NOT NULL,
-    column_name             VARCHAR         NOT NULL,
+USE DATABASE STAR_DEV;
+USE SCHEMA SEMANTIC_MAPPING;
 
-    -- Type & role inference
-    inferred_data_type      VARCHAR,        -- NUMERIC | STRING | BOOLEAN | DATE | etc
-    primary_role            VARCHAR,        -- ID | MEASURE | CODE | FLAG | TEXT
-    secondary_roles         ARRAY,           -- e.g. ['FOREIGN_KEY','SURROGATE_KEY']
-
-    -- Cardinality & completeness
-    row_count               NUMBER,
-    non_null_count          NUMBER,
-    distinct_count          NUMBER,
-    distinct_ratio          FLOAT,           -- distinct / non-null
-
-    -- Distribution summaries
-    top_values              VARIANT,         -- array of {value, pct}
-    modal_value_pct         FLOAT,
-    entropy_score           FLOAT,
-    skewness                FLOAT,
-
-    -- Numeric-only stats (NULL for non-numeric)
-    min_value               FLOAT,
-    max_value               FLOAT,
-    mean_value              FLOAT,
-    stddev_value            FLOAT,
-
-    -- Temporal behavior
-    temporal_density        VARCHAR,         -- e.g. "124.6 per day"
-
-    -- Metadata
-    profiling_run_id        VARCHAR,         -- allows grouping multiple runs
-    profiling_mode          VARCHAR,         -- FULL | SAMPLE | INCREMENTAL
-    created_at              TIMESTAMP_NTZ    DEFAULT CURRENT_TIMESTAMP,
-
-    -- Convenience
-    CONSTRAINT pk_sep_column_distribution
-        PRIMARY KEY (table_schema, table_name, column_name, created_at)
+DROP TABLE IF EXISTS STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS;
+CREATE OR REPLACE TABLE STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS(
+    TABLE_NAME          VARCHAR(255),
+    COLUMN_NAME         VARCHAR(255),
+    DATA_TYPE           VARCHAR(50),
+    COLUMN_CLASS        VARCHAR(20),     -- 'NUMERIC' or 'CATEGORICAL'
+    PRIMARY_ROLE        VARCHAR(20),     -- 'FLAG', 'ID', 'MEASURE', or 'CODE'
+    SECONDARY_ROLES     ARRAY,           -- Stores ['SURROGATE_KEY', 'ENUM', etc.]
+    TOP_VALUES          ARRAY,           -- Stores JSON objects of top 10 values/pcts
+    ENTROPY_SCORE       FLOAT,
+    SKEWNESS            FLOAT,
+    MODAL_VALUE_PCT     FLOAT,
+    MEAN_VAL            FLOAT,
+    STDDEV_VAL          FLOAT,
+    MIN_VAL             FLOAT,
+    MAX_VAL             FLOAT,
+    TEMPORAL_DENSITY    VARCHAR(100),    -- e.g., '10.5 per day'
+    PROFILED_AT         TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
 );
 
-
 -- =====================================================================
--- STM UNPIVOT PROFILER (ZERO-PROCEDURE, METADATA-DRIVEN)
--- PATCHED: UNPIVOT VIA VARCHAR CAST FOR MIXED DATA TYPES
--- Target platform: Snowflake
+-- STM PREPARATION PROFILER (METADATA-DRIVEN)
 -- =====================================================================
-
 -- =====================
 -- CONFIGURATION
 -- =====================
-SET TARGET_SCHEMA = CURRENT_SCHEMA();
-SET TARGET_TABLE  = 'PROCEDURE_FACT';
-SET TEMPORAL_COLUMN = 'PROCEDURE_DATE';
-
+SET PROFILE_DB = 'STAR_DEV';
+SET PROFILE_SCHEMA = 'DIM_MODEL';
+SET PROFILE_TABLE = 'FACT_ENCOUNTER_PROCEDURE';
+SET TEMPORAL_COLUMN = 'DIM_DATE_KEY';
+SET DISTRIBUTION_TABLE = 'STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS';
 -- =====================
 -- BUILD UNPIVOT COLUMN LIST (DYNAMIC)
 -- =====================
-DECLARE
-    v_unpivot_list STRING;
-    v_sql          STRING;
+DECLARE v_unpivot_list STRING;
+v_unpivot_cast STRING;
+v_sql STRING;
+info_schema_path STRING := $PROFILE_DB || '.INFORMATION_SCHEMA.COLUMNS';
 BEGIN
-
-    SELECT
-        LISTAGG(column_name || '::VARCHAR AS ' || column_name || '_V', ',\n            ') 
-            WITHIN GROUP (ORDER BY ordinal_position)
-    INTO :v_unpivot_list
-    FROM information_schema.columns
-    WHERE table_schema = $TARGET_SCHEMA
-      AND table_name   = $TARGET_TABLE
-      AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
-      AND column_name <> $TEMPORAL_COLUMN;
-
+SELECT
+    LISTAGG(
+        column_name || '::VARCHAR AS ' || column_name || '_V',
+        ',\n            '
+    ) WITHIN GROUP (
+        ORDER BY
+            ordinal_position
+    ),
+    LISTAGG(column_name || '_V', ',\n            ') WITHIN GROUP (
+        ORDER BY
+            ordinal_position
+    ) INTO :v_unpivot_cast,
+    :v_unpivot_list
+FROM
+    IDENTIFIER(:info_schema_path)
+WHERE
+    table_schema = $PROFILE_SCHEMA
+    AND table_name = $PROFILE_TABLE
+    AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
+    AND column_name <> $TEMPORAL_COLUMN
+    AND column_name NOT IN (
+        'ETL_CREATED_DATE',
+        'ETL_UPDATED_DATE',
+        'ETL_CREATED_BY',
+        'ETL_UPDATED_BY'
+    );
 -- =====================
 -- MAIN PROFILER QUERY
 -- =====================
-
     v_sql := '
+INSERT INTO ' || $DISTRIBUTION_TABLE || '   
 WITH column_metadata AS (
     SELECT
         column_name,
@@ -91,16 +85,16 @@ WITH column_metadata AS (
             ) THEN ''NUMERIC''
             ELSE ''CATEGORICAL''
         END AS column_class
-    FROM information_schema.columns
-    WHERE table_schema = ''' || $TARGET_SCHEMA || '''
-      AND table_name   = ''' || $TARGET_TABLE || '''
+    FROM ' || $PROFILE_DB || '.INFORMATION_SCHEMA.COLUMNS 
+    WHERE table_schema = ''' || $PROFILE_SCHEMA || '''
+      AND table_name   = ''' || $PROFILE_TABLE || '''
 ),
 
 base_projected AS (
     SELECT
         t.*,
-        ' || v_unpivot_list || '
-    FROM ' || $TARGET_TABLE || ' t
+        ' || v_unpivot_cast || '
+    FROM ' || $PROFILE_DB || '.' || $PROFILE_SCHEMA || '.' || $PROFILE_TABLE || ' AS t
 ),
 
 unpivoted AS (
@@ -110,7 +104,7 @@ unpivoted AS (
     FROM base_projected
     UNPIVOT (
         value FOR column_name IN (
-            ' || LISTAGG(REPLACE(v_unpivot_list, '::VARCHAR AS ', '_V'), ',\n            ') || '
+            ' || v_unpivot_list || '
         )
     )
 ),
@@ -124,7 +118,7 @@ unpivoted_with_type AS (
             WHEN cm.column_class = ''NUMERIC'' THEN TRY_TO_NUMBER(u.value)
             ELSE NULL
         END AS num_val,
-        ' || $TEMPORAL_COLUMN || ' AS temporal_value
+        '' || $TEMPORAL_COLUMN || '' AS temporal_value
     FROM unpivoted u
     JOIN column_metadata cm
       ON u.column_name = cm.column_name
@@ -145,20 +139,36 @@ column_totals AS (
 ),
 
 ranked AS (
-    SELECT vc.column_name, vc.column_class, vc.val, vc.cnt,
-           vc.cnt / ct.total_cnt AS pct,
-           ROW_NUMBER() OVER (PARTITION BY vc.column_name ORDER BY vc.cnt DESC) AS rn
-    FROM value_counts vc
-    JOIN column_totals ct ON vc.column_name = ct.column_name
+   SELECT
+        vc.column_name,
+        vc.column_class,
+        vc.val,
+        vc.cnt,
+        -- Wrap denominator in NULLIF to return NULL instead of erroring on zero
+        vc.cnt / NULLIF(ct.total_cnt, 0) AS pct,
+        ROW_NUMBER() OVER (
+            PARTITION BY vc.column_name
+            ORDER BY
+                vc.cnt DESC
+        ) AS rn
+    FROM
+        value_counts vc
+        JOIN column_totals ct ON vc.column_name = ct.column_name
 ),
 
 top_values AS (
-    SELECT column_name,
-           ARRAY_AGG(OBJECT_CONSTRUCT(''value'', val, ''pct'', ROUND(pct,6)) ORDER BY pct DESC) AS top_values,
-           MAX(pct) AS modal_value_pct
-    FROM ranked
-    WHERE rn <= 10
-    GROUP BY column_name
+    SELECT
+    column_name,
+    ARRAY_AGG(
+        OBJECT_CONSTRUCT(
+            ''value'', val,
+            ''pct'', ROUND(pct, 6)
+        )
+    ) WITHIN GROUP (ORDER BY pct DESC) AS top_values,
+    MAX(pct) AS modal_value_pct
+FROM ranked
+WHERE rn <= 10
+GROUP BY column_name
 ),
 
 entropy AS (
@@ -185,7 +195,7 @@ categorical_skew AS (
 numeric_skew AS (
     SELECT u.column_name,
            CASE WHEN ns.stddev_val > 0 AND ns.n > 2 THEN
-                SUM(POWER((u.num_val - ns.mean_val)/ns.stddev_val,3))*ns.n/((ns.n-1)*(ns.n-2))
+                SUM(POWER((u.num_val - ns.mean_val)/NULLIF(ns.stddev_val,0),3)) * ns.n / NULLIF((ns.n-1)*(ns.n-2), 0)
            ELSE NULL END AS skewness
     FROM unpivoted_with_type u
     JOIN numeric_stats ns ON u.column_name = ns.column_name
@@ -196,7 +206,7 @@ numeric_skew AS (
 temporal_density AS (
     SELECT u.column_name, ROUND(COUNT(*)/NULLIF(ts.active_days,0),2)::VARCHAR || '' per day'' AS temporal_density
     FROM unpivoted_with_type u
-    CROSS JOIN (SELECT COUNT(DISTINCT ' || $TEMPORAL_COLUMN || ') AS active_days FROM ' || $TARGET_TABLE || ') ts
+    CROSS JOIN (SELECT COUNT(DISTINCT ' || $TEMPORAL_COLUMN || ') AS active_days FROM ' || $PROFILE_DB || '.' || $PROFILE_SCHEMA || '.' || $PROFILE_TABLE || ') ts
     WHERE u.temporal_value IS NOT NULL
     GROUP BY u.column_name, ts.active_days
 ),
@@ -233,14 +243,14 @@ secondary_roles AS (
     FROM column_roles cr
 )
 
-INSERT INTO sep_column_distribution
-SELECT ''' || $TARGET_TABLE || ''' AS table_name, column_name, data_type, column_class, primary_role,
+SELECT ''' || $PROFILE_TABLE || ''' AS table_name, column_name, data_type, column_class, primary_role,
        secondary_roles, top_values, entropy_score, skewness, modal_value_pct, mean_val, stddev_val,
        min_val, max_val, temporal_density, CURRENT_TIMESTAMP
 FROM secondary_roles;
 ';
 
-    EXECUTE IMMEDIATE v_sql;
-
-    RETURN 'STM profiler completed for table ' || $TARGET_TABLE;
+EXECUTE IMMEDIATE v_sql;
+RETURN 'STM profiler completed for table ' || $PROFILE_TABLE;
+--RETURN v_sql;
 END;
+
