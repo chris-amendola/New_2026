@@ -1,15 +1,37 @@
 USE DATABASE STAR_DEV;
 USE SCHEMA SEMANTIC_MAPPING;
 
+DROP TABLE IF EXISTS STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS;
+CREATE OR REPLACE TABLE STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS(
+    TABLE_NAME          VARCHAR(255),
+    COLUMN_NAME         VARCHAR(255),
+    DATA_TYPE           VARCHAR(50),
+    COLUMN_CLASS        VARCHAR(20),     -- 'NUMERIC' or 'CATEGORICAL'
+    PRIMARY_ROLE        VARCHAR(20),     -- 'FLAG', 'ID', 'MEASURE', or 'CODE'
+    SECONDARY_ROLES     ARRAY,           -- Stores ['SURROGATE_KEY', 'ENUM', etc.]
+    TOP_VALUES          ARRAY,           -- Stores JSON objects of top 10 values/pcts
+    ENTROPY_SCORE       FLOAT,
+    SKEWNESS            FLOAT,
+    MODAL_VALUE_PCT     FLOAT,
+    MEAN_VAL            FLOAT,
+    STDDEV_VAL          FLOAT,
+    MIN_VAL             FLOAT,
+    MAX_VAL             FLOAT,
+    UNIT_COLUMN         VARCHAR(255),
+    DENSITY             VARCHAR(100),    -- e.g., '10.5 per unit'
+    PROFILED_AT         TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+);
+
 CREATE OR REPLACE PROCEDURE SP_TABLE_DISTRIBUTION(
     PROFILE_DB VARCHAR,
     PROFILE_SCHEMA VARCHAR,
     PROFILE_TABLE VARCHAR,
-    TEMPORAL_COLUMN VARCHAR,
+    UNIT_COLUMN VARCHAR,
     DISTRIBUTION_TABLE VARCHAR DEFAULT 'STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS'
 )
 RETURNS VARCHAR
 LANGUAGE SQL
+EXECUTE AS CALLER
 AS
 $$
 DECLARE
@@ -35,17 +57,17 @@ BEGIN
             RETURN 'ERROR: Unable to access table metadata for ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ' - ' || SQLERRM;
     END;
     
-    -- Validate temporal column exists
+    -- Validate unit column exists
     LET v_col_count NUMBER;
     BEGIN
         SELECT COUNT(*) INTO :v_col_count
         FROM IDENTIFIER(:info_schema_path)
         WHERE table_schema = :PROFILE_SCHEMA
           AND table_name = :PROFILE_TABLE
-          AND column_name = :TEMPORAL_COLUMN;
+          AND column_name = :UNIT_COLUMN;
         
         IF (v_col_count = 0) THEN
-            RETURN 'ERROR: Temporal column ' || TEMPORAL_COLUMN || ' does not exist in table ' || PROFILE_TABLE;
+            RETURN 'ERROR: Temporal column ' || UNIT_COLUMN || ' does not exist in table ' || PROFILE_TABLE;
         END IF;
     EXCEPTION
         WHEN OTHER THEN
@@ -65,7 +87,7 @@ BEGIN
         WHERE table_schema = :PROFILE_SCHEMA
           AND table_name = :PROFILE_TABLE
           AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
-          AND column_name <> :TEMPORAL_COLUMN
+          AND column_name <> :UNIT_COLUMN
           AND column_name NOT IN ('ETL_CREATED_DATE', 'ETL_UPDATED_DATE', 'ETL_CREATED_BY', 'ETL_UPDATED_BY');
         
         IF (v_unpivot_list IS NULL OR v_unpivot_list = '') THEN
@@ -127,7 +149,7 @@ unpivoted_with_type AS (
             WHEN cm.column_class = ''NUMERIC'' THEN TRY_TO_NUMBER(u.value)
             ELSE NULL
         END AS num_val,
-        ''' || TEMPORAL_COLUMN || ''' AS temporal_value
+        ''' || UNIT_COLUMN || ''' AS temporal_value
     FROM unpivoted u
     JOIN column_metadata cm
       ON u.column_name = cm.column_name
@@ -208,25 +230,25 @@ numeric_skew AS (
     GROUP BY u.column_name, ns.mean_val, ns.stddev_val, ns.n
 ),
 
-temporal_density AS (
-    SELECT u.column_name, ROUND(COUNT(*)/NULLIF(ts.active_days,0),2)::VARCHAR || '' per day'' AS temporal_density
+unit_density AS (
+    SELECT u.column_name, ''' || UNIT_COLUMN || ''' as UNIT_COL, ROUND(COUNT(*)/NULLIF(unt.units,0),2)::VARCHAR || '' per unit'' AS density
     FROM unpivoted_with_type u
-    CROSS JOIN (SELECT COUNT(DISTINCT ' || TEMPORAL_COLUMN || ') AS active_days FROM ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ') ts
-    WHERE u.temporal_value IS NOT NULL
-    GROUP BY u.column_name, ts.active_days
+    CROSS JOIN (SELECT COUNT(DISTINCT ' || UNIT_COLUMN || ') AS units FROM ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ') unt
+    WHERE unt.units IS NOT NULL
+    GROUP BY u.column_name, unt.units
 ),
 
 final_metrics AS (
     SELECT tv.column_name, cm.data_type, cm.column_class, tv.top_values, e.entropy_score,
            COALESCE(ns2.skewness, cs.skewness) AS skewness,
-           tv.modal_value_pct, td.temporal_density, ns.mean_val, ns.stddev_val, ns.min_val, ns.max_val
+           tv.modal_value_pct, ud.unit_col, ud.density, ns.mean_val, ns.stddev_val, ns.min_val, ns.max_val
     FROM top_values tv
     JOIN column_metadata cm ON tv.column_name = cm.column_name
     JOIN entropy e ON tv.column_name = e.column_name
     LEFT JOIN categorical_skew cs ON tv.column_name = cs.column_name
     LEFT JOIN numeric_skew ns2 ON tv.column_name = ns2.column_name
     LEFT JOIN numeric_stats ns ON tv.column_name = ns.column_name
-    LEFT JOIN temporal_density td ON tv.column_name = td.column_name
+    LEFT JOIN unit_density ud ON tv.column_name = ud.column_name
 ),
 
 column_roles AS (
@@ -250,7 +272,7 @@ secondary_roles AS (
 
 SELECT ''' || PROFILE_TABLE || ''' AS table_name, column_name, data_type, column_class, primary_role,
        secondary_roles, top_values, entropy_score, skewness, modal_value_pct, mean_val, stddev_val,
-       min_val, max_val, temporal_density, CURRENT_TIMESTAMP
+       min_val, max_val, unit_col, density, CURRENT_TIMESTAMP
 FROM secondary_roles;
 ';
 
@@ -264,6 +286,13 @@ FROM secondary_roles;
 END;
 $$;
 
--- Example usage:
--- CALL SP_TABLE_DISTRIBUTION('STAR_DEV', 'DIM_MODEL', 'FACT_ENCOUNTER_PROCEDURE', 'DIM_DATE_KEY');
--- CALL SP_TABLE_DISTRIBUTION('STAR_DEV', 'DIM_MODEL', 'FACT_ENCOUNTER_PROCEDURE', 'DIM_DATE_KEY', 'STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS');
+CALL SP_TABLE_DISTRIBUTION('STAR', 'DIM_MODEL', 'FACT_ENCOUNTER_PROCEDURE', 'DIM_DATE_KEY');
+CALL SP_TABLE_DISTRIBUTION('STAR','DIM_MODEL','DIM_APPOINTMENT_ACTIVITY','ORGANIZATION_ID');
+SELECT * FROM STAR_DEV.SEMANTIC_MAPPING.COLUMN_DISTRIBUTIONS;
+
+
+SELECT TABLE_NAME
+FROM STAR.INFORMATION_SCHEMA.TABLES
+WHERE TABLE_SCHEMA='DIM_MODEL'
+  AND TABLE_TYPE='BASE TABLE'
+ORDER BY TABLE_NAME;
