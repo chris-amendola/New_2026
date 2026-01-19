@@ -319,3 +319,36 @@
 |DIM_MODEL|DIM_BILLING_ADJUSTMENT|{description}|{row_grain}|{Slowly Changing Behavior}|
 |DIM_MODEL|DIM_CPTCODE|{description}|{row_grain}|{Slowly Changing Behavior}|
 |DIM_MODEL|DIM_EMPLOYEE|{description}|{row_grain}|{Slowly Changing Behavior}|
+
+### Column Level Mapping
+|Target Schema|Target Table|Target Column|Target Data Type|Target Nullable|Target Description|Target Grain Context{How it behaves at target grain}|Source System|Source Schema|Source Table|Source Column|Source Grain|Source Filter Logic|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+
+#### To be considered
+|ITEM|COMMENT|
+|---|---|
+|Join Logic|Explicit join keys|
+|Transformation Type|Direct / Derived / Lookup / Aggregated|
+|Transformation Logic|SQL / Pseudocode|
+|Business Rule Description||
+|Default Value Logic||
+|Null Handling Strategy||
+|Invalid Value Handling||
+|Unit of Measure||
+|Code System|ICD-10, CPT, SNOMED, LOINC|
+|Code Version||
+|Value Set Reference||
+|Time Semantics|Event time / Record time|
+|Effective Dating Logic||
+|Late Arriving Data Handling||
+|Correction Handling||
+|Lineage Confidence|High / Medium / Low|
+|Data Quality Expectations||
+|Validation Rules||
+|Reconciliation Strategy||
+|PHI Classification||
+|Security Classification||
+|Usage Restrictions||
+|Known Limitations||
+|Open Questions||
+
