@@ -321,21 +321,18 @@
 |DIM_MODEL|DIM_EMPLOYEE|{description}|{row_grain}|{Slowly Changing Behavior}|
 
 ### Column Level Mapping
-|Target Schema|Target Table|Target Column|Target Data Type|Target Nullable|Target Description|Target Grain Context{How it behaves at target grain}|Source System|Source Schema|Source Table|Source Column|Source Grain|Source Filter Logic|
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|Target Schema|Target Table|Target Column|Target Data Type|Target Nullable|Target Description|Target Grain Context{How it behaves at target grain}|Source System|Source Schema|Source Table|Source Column|Source Grain|Source Filter Logic|Transformation Type Direct / Derived / Lookup / Aggregated|Join Logic Explicit join keys|Transformation Logic SQL / Pseudocode|Default Value Logic|Code System{ICD-10, CPT, SNOMED, LOINC}|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+
 
 #### To be considered
 |ITEM|COMMENT|
 |---|---|
-|Join Logic|Explicit join keys|
-|Transformation Type|Direct / Derived / Lookup / Aggregated|
-|Transformation Logic|SQL / Pseudocode|
 |Business Rule Description||
-|Default Value Logic||
 |Null Handling Strategy||
 |Invalid Value Handling||
 |Unit of Measure||
-|Code System|ICD-10, CPT, SNOMED, LOINC|
+|Code System{ICD-10, CPT, SNOMED, LOINC}|
 |Code Version||
 |Value Set Reference||
 |Time Semantics|Event time / Record time|
