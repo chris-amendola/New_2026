@@ -42,6 +42,9 @@ DECLARE
     v_error_msg STRING;
     v_unit_col_clause STRING;
     v_density_clause STRING;
+    v_return_msg STRING;
+    v_full_table_name STRING := PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE;
+    v_log_sql STRING;
 BEGIN
     -- Validate table exists
     LET v_table_count NUMBER;
@@ -52,11 +55,21 @@ BEGIN
           AND table_name = :PROFILE_TABLE;
         
         IF (v_table_count = 0) THEN
-            RETURN 'ERROR: Table ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ' does not exist';
+            v_return_msg := 'ERROR: Table ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ' does not exist';
+            v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                         REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                         v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+            EXECUTE IMMEDIATE v_log_sql;
+            RETURN v_return_msg;
         END IF;
     EXCEPTION
         WHEN OTHER THEN
-            RETURN 'ERROR: Unable to access table metadata for ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ' - ' || SQLERRM;
+            v_return_msg := 'ERROR: Unable to access table metadata for ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ' - ' || SQLERRM;
+            v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                         REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                         v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+            EXECUTE IMMEDIATE v_log_sql;
+            RETURN v_return_msg;
     END;
     
     -- Validate unit column exists if provided
@@ -76,11 +89,21 @@ BEGIN
               AND column_name = :UNIT_COLUMN;
             
             IF (v_col_count = 0) THEN
-                RETURN 'ERROR: Temporal column ' || UNIT_COLUMN || ' does not exist in table ' || PROFILE_TABLE;
+                v_return_msg := 'ERROR: Temporal column ' || UNIT_COLUMN || ' does not exist in table ' || PROFILE_TABLE;
+                v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                             REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                             v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+                EXECUTE IMMEDIATE v_log_sql;
+                RETURN v_return_msg;
             END IF;
         EXCEPTION
             WHEN OTHER THEN
-                RETURN 'ERROR: Unable to validate temporal column - ' || SQLERRM;
+                v_return_msg := 'ERROR: Unable to validate temporal column - ' || SQLERRM;
+                v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                             REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                             v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+                EXECUTE IMMEDIATE v_log_sql;
+                RETURN v_return_msg;
         END;
         
         -- Set clauses for density calculation
@@ -122,11 +145,21 @@ BEGIN
         END IF;
         
         IF (v_unpivot_list IS NULL OR v_unpivot_list = '') THEN
-            RETURN 'ERROR: No valid columns found to profile in table ' || PROFILE_TABLE;
+            v_return_msg := 'ERROR: No valid columns found to profile in table ' || PROFILE_TABLE;
+            v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                         REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                         v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+            EXECUTE IMMEDIATE v_log_sql;
+            RETURN v_return_msg;
         END IF;
     EXCEPTION
         WHEN OTHER THEN
-            RETURN 'ERROR: Failed to build column list - ' || SQLERRM;
+            v_return_msg := 'ERROR: Failed to build column list - ' || SQLERRM;
+            v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                         REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                         v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+            EXECUTE IMMEDIATE v_log_sql;
+            RETURN v_return_msg;
     END;
     
     -- Build and execute main profiler query
@@ -313,11 +346,21 @@ FROM secondary_roles;
 ';
 
         EXECUTE IMMEDIATE v_sql;
-        RETURN COALESCE(v_error_msg, '') || 'STM profiler completed for table ' || PROFILE_TABLE;
+        v_return_msg := COALESCE(v_error_msg, '') || 'STM profiler completed for table ' || PROFILE_TABLE;
+        v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                     REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                     v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+        EXECUTE IMMEDIATE v_log_sql;
+        RETURN v_return_msg;
         
     EXCEPTION
         WHEN OTHER THEN
-            RETURN 'ERROR: Failed to execute profiler query - ' || SQLERRM;
+            v_return_msg := 'ERROR: Failed to execute profiler query - ' || SQLERRM;
+            v_log_sql := 'INSERT INTO STAR_DEV.SEMANTIC_MAPPING.PROFILER_DISTRIBUTION_LOG VALUES (''' || 
+                         REPLACE(v_return_msg, '''', '''''') || ''', CURRENT_TIMESTAMP, ''' || 
+                         v_full_table_name || ''', ''' || UNIT_COLUMN || ''')';
+            EXECUTE IMMEDIATE v_log_sql;
+            RETURN v_return_msg;
     END;
 END;
 $$;
