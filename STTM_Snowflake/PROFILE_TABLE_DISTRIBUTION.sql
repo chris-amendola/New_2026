@@ -40,6 +40,8 @@ DECLARE
     v_sql STRING;
     info_schema_path STRING := PROFILE_DB || '.INFORMATION_SCHEMA.COLUMNS';
     v_error_msg STRING;
+    v_unit_col_clause STRING;
+    v_density_clause STRING;
 BEGIN
     -- Validate table exists
     LET v_table_count NUMBER;
@@ -57,38 +59,67 @@ BEGIN
             RETURN 'ERROR: Unable to access table metadata for ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ' - ' || SQLERRM;
     END;
     
-    -- Validate unit column exists
-    LET v_col_count NUMBER;
-    BEGIN
-        SELECT COUNT(*) INTO :v_col_count
-        FROM IDENTIFIER(:info_schema_path)
-        WHERE table_schema = :PROFILE_SCHEMA
-          AND table_name = :PROFILE_TABLE
-          AND column_name = :UNIT_COLUMN;
+    -- Validate unit column exists if provided
+    IF (UNIT_COLUMN = '' OR UNIT_COLUMN IS NULL) THEN
+        -- Unit column not specified - set clauses for NULL density
+        v_unit_col_clause := '''unspecified''';
+        v_density_clause := 'NULL';
+        v_error_msg := 'NOTE: Unit column not specified - density metric will be NULL. ';
+    ELSE
+        -- Unit column specified - validate it exists
+        LET v_col_count NUMBER;
+        BEGIN
+            SELECT COUNT(*) INTO :v_col_count
+            FROM IDENTIFIER(:info_schema_path)
+            WHERE table_schema = :PROFILE_SCHEMA
+              AND table_name = :PROFILE_TABLE
+              AND column_name = :UNIT_COLUMN;
+            
+            IF (v_col_count = 0) THEN
+                RETURN 'ERROR: Temporal column ' || UNIT_COLUMN || ' does not exist in table ' || PROFILE_TABLE;
+            END IF;
+        EXCEPTION
+            WHEN OTHER THEN
+                RETURN 'ERROR: Unable to validate temporal column - ' || SQLERRM;
+        END;
         
-        IF (v_col_count = 0) THEN
-            RETURN 'ERROR: Temporal column ' || UNIT_COLUMN || ' does not exist in table ' || PROFILE_TABLE;
-        END IF;
-    EXCEPTION
-        WHEN OTHER THEN
-            RETURN 'ERROR: Unable to validate temporal column - ' || SQLERRM;
-    END;
+        -- Set clauses for density calculation
+        v_unit_col_clause := '''' || UNIT_COLUMN || '''';
+        v_density_clause := 'ROUND(COUNT(*)/NULLIF(unt.units,0),2)::VARCHAR || '' per unit''';
+    END IF;
     
     -- Build unpivot column list
     BEGIN
-        SELECT
-            LISTAGG(
-                column_name || '::VARCHAR AS ' || column_name || '_V',
-                ',\n            '
-            ) WITHIN GROUP (ORDER BY ordinal_position),
-            LISTAGG(column_name || '_V', ',\n            ') WITHIN GROUP (ORDER BY ordinal_position)
-        INTO :v_unpivot_cast, :v_unpivot_list
-        FROM IDENTIFIER(:info_schema_path)
-        WHERE table_schema = :PROFILE_SCHEMA
-          AND table_name = :PROFILE_TABLE
-          AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
-          AND column_name <> :UNIT_COLUMN
-          AND column_name NOT IN ('ETL_CREATED_DATE', 'ETL_UPDATED_DATE', 'ETL_CREATED_BY', 'ETL_UPDATED_BY');
+        IF (UNIT_COLUMN = '' OR UNIT_COLUMN IS NULL) THEN
+            -- No unit column to exclude
+            SELECT
+                LISTAGG(
+                    column_name || '::VARCHAR AS ' || column_name || '_V',
+                    ',\n            '
+                ) WITHIN GROUP (ORDER BY ordinal_position),
+                LISTAGG(column_name || '_V', ',\n            ') WITHIN GROUP (ORDER BY ordinal_position)
+            INTO :v_unpivot_cast, :v_unpivot_list
+            FROM IDENTIFIER(:info_schema_path)
+            WHERE table_schema = :PROFILE_SCHEMA
+              AND table_name = :PROFILE_TABLE
+              AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
+              AND column_name NOT IN ('ETL_CREATED_DATE', 'ETL_UPDATED_DATE', 'ETL_CREATED_BY', 'ETL_UPDATED_BY');
+        ELSE
+            -- Exclude the unit column
+            SELECT
+                LISTAGG(
+                    column_name || '::VARCHAR AS ' || column_name || '_V',
+                    ',\n            '
+                ) WITHIN GROUP (ORDER BY ordinal_position),
+                LISTAGG(column_name || '_V', ',\n            ') WITHIN GROUP (ORDER BY ordinal_position)
+            INTO :v_unpivot_cast, :v_unpivot_list
+            FROM IDENTIFIER(:info_schema_path)
+            WHERE table_schema = :PROFILE_SCHEMA
+              AND table_name = :PROFILE_TABLE
+              AND data_type NOT IN ('VARIANT', 'ARRAY', 'OBJECT')
+              AND column_name <> :UNIT_COLUMN
+              AND column_name NOT IN ('ETL_CREATED_DATE', 'ETL_UPDATED_DATE', 'ETL_CREATED_BY', 'ETL_UPDATED_BY');
+        END IF;
         
         IF (v_unpivot_list IS NULL OR v_unpivot_list = '') THEN
             RETURN 'ERROR: No valid columns found to profile in table ' || PROFILE_TABLE;
@@ -149,7 +180,7 @@ unpivoted_with_type AS (
             WHEN cm.column_class = ''NUMERIC'' THEN TRY_TO_NUMBER(u.value)
             ELSE NULL
         END AS num_val,
-        ''' || UNIT_COLUMN || ''' AS temporal_value
+        ' || v_unit_col_clause || ' AS temporal_value
     FROM unpivoted u
     JOIN column_metadata cm
       ON u.column_name = cm.column_name
@@ -231,11 +262,16 @@ numeric_skew AS (
 ),
 
 unit_density AS (
-    SELECT u.column_name, ''' || UNIT_COLUMN || ''' as UNIT_COL, ROUND(COUNT(*)/NULLIF(unt.units,0),2)::VARCHAR || '' per unit'' AS density
-    FROM unpivoted_with_type u
+    SELECT u.column_name, ' || v_unit_col_clause || ' as UNIT_COL, ' || v_density_clause || ' AS density
+    FROM unpivoted_with_type u' ||
+    CASE 
+        WHEN (UNIT_COLUMN = '' OR UNIT_COLUMN IS NULL) THEN '
+    GROUP BY u.column_name'
+        ELSE '
     CROSS JOIN (SELECT COUNT(DISTINCT ' || UNIT_COLUMN || ') AS units FROM ' || PROFILE_DB || '.' || PROFILE_SCHEMA || '.' || PROFILE_TABLE || ') unt
     WHERE unt.units IS NOT NULL
-    GROUP BY u.column_name, unt.units
+    GROUP BY u.column_name, unt.units'
+    END || '
 ),
 
 final_metrics AS (
@@ -277,7 +313,7 @@ FROM secondary_roles;
 ';
 
         EXECUTE IMMEDIATE v_sql;
-        RETURN 'STM profiler completed for table ' || PROFILE_TABLE;
+        RETURN COALESCE(v_error_msg, '') || 'STM profiler completed for table ' || PROFILE_TABLE;
         
     EXCEPTION
         WHEN OTHER THEN
