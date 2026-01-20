@@ -322,7 +322,7 @@
 
 ### Column Level Mapping
 |Target Schema|Target Table|Target Column|Target Data Type|Target Nullable|Target Description|Target Grain Context{How it behaves at target grain}|Source System|Source Schema|Source Table|Source Column|Source Grain|Source Filter Logic|
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
 
 #### To be considered
 |ITEM|COMMENT|
