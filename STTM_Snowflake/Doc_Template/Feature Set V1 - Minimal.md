@@ -208,7 +208,7 @@ WITH column_metadata AS (
         column_name       AS source_column,
         ordinal_position,
         data_type         AS declared_data_type,
-        is_nullable = 'YES' AS nullable,
+        is_nullable       AS nullable,
         character_maximum_length AS max_length
     FROM information_schema.columns
     WHERE table_schema = :source_schema
