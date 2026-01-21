@@ -161,32 +161,21 @@ Before Cortex ever reasons.
 On purpose:
 
 - Semantic embeddings
-    
 - Business glossary alignment
-    
 - Cross-system historical mapping reuse
-    
 - NLP over free text
-    
 - Learned transformation patterns
-    
 
 You don’t need them yet—and they complicate trust.
-
 ---
 
 ## Why This v1 Is “Freeze-Worthy”
 
 - ~90% of features won’t change over time
-    
 - They align with how senior analysts already think
-    
 - They support _both_ STM and general profiling
-    
 - They degrade gracefully when data is messy
-    
 - They’re easy to explain in one slide
-    
 
 If leadership asks:
 
@@ -201,12 +190,9 @@ You can answer clearly.
 Before adding anything else:
 
 1. Implement **this exact feature set**
-    
 2. Run it on 3–5 very different source systems
-    
 3. See where analysts _disagree with it_
     
-
 Disagreement reveals v2 requirements.
 
 ---
@@ -214,11 +200,8 @@ Disagreement reveals v2 requirements.
 If you want next, we can:
 
 - Translate this into **Snowflake SQL patterns**
-    
 - Design the **role classification rules**
-    
 - Define the **Cortex prompt that consumes v1 cleanly**
-    
 - Decide which features get surfaced to humans vs hidden
     
 
@@ -227,14 +210,10 @@ Tell me where to go next.
 Excellent—this is the right pairing. I’ll do this in two tightly coupled sections:
 
 1. **Snowflake SQL patterns** to compute Feature Set v1 (modular, reusable)
-    
 2. **Deterministic role classification rules** that sit _between_ features and Cortex
-    
 
 I’ll keep everything **Snowflake-native**, production-realistic, and architect-defensible.
-
 ---
-
 # 1. Snowflake SQL Patterns for Feature Set v1
 
 ## Core Design Pattern
