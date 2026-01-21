@@ -1,4 +1,4 @@
- architecture + intent
+Snowflake Cortex AI STTM: Architecture and Intent
 ---
 ## Design Philosophy 
 
@@ -134,16 +134,11 @@ They become training data and governance evidence.
 ❌ Anything that can’t be explained in a design review
 
 ---
-## What makes this acceptable by role
+## Unplaced thoughts
 
-- **Architects** like it because it’s layered, auditable, and Snowflake-native
-- **Analysts** like it because it saves time but respects judgment
-- **Leadership** likes it because:
-    - It’s visible
-    - It’s safe
-    - It produces tangible artifacts
-
-And crucially:
+- layered, auditable, and Snowflake-native
+- saves time but respects judgment
+- visible, safe, produces tangible artifacts
 
 > Even if Cortex disappeared tomorrow, Plane 1 still improves STM quality.
 
