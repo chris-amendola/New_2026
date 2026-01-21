@@ -1,4 +1,3 @@
-Perfect place to start. Feature set v1 is where you quietly decide whether this succeeds or becomes noise.
 
 **Minimal** feature set requirements:
 
@@ -81,9 +80,7 @@ Cheap but high signal.
 |avg_length|float|
 |whitespace_pct|float|
 |empty_string_pct|float|
-
 ---
-
 ## 5. Pattern & Format Signals (Do I match known shapes?)
 
 These feed PHI detection _and_ semantic role inference.
@@ -96,9 +93,7 @@ These feed PHI detection _and_ semantic role inference.
 |alphanumeric_pct|float||
 |hyphenated_pct|float|MRNs, codes|
 |email_like_pct|float||
-
 ---
-
 ## 6. Domain Concentration (Am I categorical?)
 
 Essential for mapping to codes vs measures.
@@ -110,13 +105,10 @@ Essential for mapping to codes vs measures.
 |entropy_score|float (optional)|
 
 > High concentration + low cardinality → codes, flags.
-
 ---
-
 ## 7. Foreign-Key-Like Behavior (Do I reference something?)
 
 Very powerful when it hits.
-
 |Feature|Type|
 |---|---|
 |appears_in_other_tables|boolean|
@@ -124,7 +116,6 @@ Very powerful when it hits.
 |join_success_pct|float (sampled)|
 
 > Even a weak signal here helps Cortex enormously.
-
 ---
 ## 8. PHI / Sensitivity Heuristics (Safety First)
 
@@ -139,9 +130,7 @@ These are _heuristics_, not labels.
 |free_text_pct|float|
 
 > You never say “this **is** PHI”—you say “this **resembles** PHI.”
-
 ---
-
 ## 9. Initial Column Role Classification (Deterministic)
 
 Before Cortex ever reasons.
@@ -155,11 +144,9 @@ Before Cortex ever reasons.
 > Cortex _inherits_ this as prior knowledge.
 
 ---
-
 ## What’s Explicitly Deferred to v2
 
 On purpose:
-
 - Semantic embeddings
 - Business glossary alignment
 - Cross-system historical mapping reuse
@@ -168,7 +155,6 @@ On purpose:
 
 You don’t need them yet—and they complicate trust.
 ---
-
 ## Why This v1 Is “Freeze-Worthy”
 
 - ~90% of features won’t change over time
@@ -178,17 +164,14 @@ You don’t need them yet—and they complicate trust.
 - They’re easy to explain in one slide
 
 If leadership asks:
-
 > “What is the AI actually looking at?”
 
 You can answer clearly.
-
 ---
 
 ## My Strong Recommendation
 
 Before adding anything else:
-
 1. Implement **this exact feature set**
 2. Run it on 3–5 very different source systems
 3. See where analysts _disagree with it_
@@ -196,18 +179,6 @@ Before adding anything else:
 Disagreement reveals v2 requirements.
 
 ---
-
-If you want next, we can:
-
-- Translate this into **Snowflake SQL patterns**
-- Design the **role classification rules**
-- Define the **Cortex prompt that consumes v1 cleanly**
-- Decide which features get surfaced to humans vs hidden
-    
-
-Tell me where to go next.
-
-Excellent—this is the right pairing. I’ll do this in two tightly coupled sections:
 
 1. **Snowflake SQL patterns** to compute Feature Set v1 (modular, reusable)
 2. **Deterministic role classification rules** that sit _between_ features and Cortex
@@ -555,32 +526,10 @@ That single instruction massively reduces hallucination.
 
 ## Why This Is the Right Level of Rigor
 
-- Deterministic where it should be
-    
+- Deterministic where it should be  
 - Probabilistic where it adds value
-    
 - Fully auditable
-    
 - Easy to explain to architects
-    
 - Easy to evolve to v2
-    
-
 ---
 
-## What I’d Do Next (Strong Opinion)
-
-Next steps, in order:
-
-1. **Implement this as a view** (not a proc)
-    
-2. Run it against:
-    
-    - An EHR extract
-        
-    - A claims feed
-        
-    - An ops table
-        
-3. Capture analyst disagreement manually
-    
