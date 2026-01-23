@@ -10,8 +10,9 @@ WITH SOURCE_RAW AS(
         STAR_DEV.INFORMATION_SCHEMA.COLUMNS
     WHERE --WHAT IS TRUE GGASTRO SOURCE TABLE SET?
           --STG_{*} are point of entry
-          table_schema = 'GGASTRO'
-      AND STARTSWITH(table_name, 'STG_')
+          table_schema = 'DIM_MODEL'
+      AND STARTSWITH(table_name, 'DIM_')
+      AND column_name NOT IN ('ETL_CREATED_DATE', 'ETL_UPDATED_DATE', 'ETL_CREATED_BY', 'ETL_UPDATED_BY')
     GROUP BY 
         table_schema,table_name
 ),
@@ -23,7 +24,9 @@ TARGET_RAW AS(
     FROM 
         STAR_DEV.INFORMATION_SCHEMA.COLUMNS
     WHERE 
-        table_schema = 'DIM_MODEL'
+          table_schema = 'DIM_MODEL'
+      AND STARTSWITH(table_name, 'FACT_')   
+      AND column_name NOT IN ('ETL_CREATED_DATE', 'ETL_UPDATED_DATE', 'ETL_CREATED_BY', 'ETL_UPDATED_BY')
     GROUP BY 
         table_schema,table_name
 ),
@@ -31,20 +34,20 @@ SOURCE_ENC AS(
     SELECT
             tab_schema AS schema,
             table_name,
-            SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', table_name::STRING) AS table_enc,
-            SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', column_names::STRING) AS cols_enc,
-            SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', CONCAT(table_name,',',column_names)) AS tab_cols_enc,
-            SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', CONCAT(column_names,',',table_name)) AS cols_tab_enc
+            AI_EMBED('snowflake-arctic-embed-m-v1.5', table_name::STRING) AS table_enc,
+            AI_EMBED('snowflake-arctic-embed-m-v1.5', column_names::STRING) AS cols_enc,
+            AI_EMBED('snowflake-arctic-embed-m-v1.5', CONCAT(table_name,',',column_names)) AS tab_cols_enc,
+            AI_EMBED('snowflake-arctic-embed-m-v1.5', CONCAT(column_names,',',table_name)) AS cols_tab_enc
         FROM SOURCE_RAW
 ),
 TARGET_ENC AS(
     SELECT
         tab_schema AS schema,
         table_name,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', table_name::STRING) AS table_enc,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', column_names::STRING) AS cols_enc,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', CONCAT(table_name,',',column_names)) AS tab_cols_enc,
-        SNOWFLAKE.CORTEX.EMBED_TEXT_768('e5-base-v2', CONCAT(column_names,',',table_name)) AS cols_tab_enc
+        AI_EMBED('snowflake-arctic-embed-m-v1.5', table_name::STRING) AS table_enc,
+        AI_EMBED('snowflake-arctic-embed-m-v1.5', column_names::STRING) AS cols_enc,
+        AI_EMBED('snowflake-arctic-embed-m-v1.5', CONCAT(table_name,',',column_names)) AS tab_cols_enc,
+        AI_EMBED('snowflake-arctic-embed-m-v1.5', CONCAT(column_names,',',table_name)) AS cols_tab_enc
      FROM TARGET_RAW
 )
 SELECT
@@ -61,5 +64,9 @@ FROM
     TARGET_ENC AS tar
 CROSS JOIN 
     SOURCE_ENC AS src
---TEMP
-ORDER BY TARGET_TABLE,TAB_COLS_MATCH DESC;
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY TARGET_TABLE
+    ORDER BY COMPOSITE_SCORE DESC
+) <= 10  --TOP 10
+ORDER BY TARGET_TABLE,COMPOSITE_SCORE DESC
+;
