@@ -5,27 +5,18 @@
 - Cheap to compute
 - Defensible in design review
 - Stable enough to freeze early
-
-AKA the **irreducible core**.
-
----
-
-# STM Assistant — Feature Set v1
-
-## Design Rules for v1
+- 
+## Design Rules
 
 1. **Derived only from data + schema** (no business guesses)
 2. **Deterministic and reproducible**
 3. **Explainable to a human**
 4. **Healthcare-safe by default**
 5. **Cheap enough to run repeatedly**
-
-Anything else is v2.
-
 ---
 ## 1. Column Identity Features (Who am I?)
 
-These are table-stakes and very stable.
+Sourced from infomationschema
 
 |Feature|Type|Notes|
 |---|---|---|
@@ -36,8 +27,6 @@ These are table-stakes and very stable.
 |declared_data_type|string|As declared|
 |nullable|boolean||
 |max_length|integer|If applicable|
-
-> These anchor the column in reality and help Cortex avoid hallucinated joins.
 
 ---
 ## 2. Observed Data Type Reality (What am I _really_?)
@@ -64,14 +53,8 @@ These directly inform role classification.
 |distinct_count|integer|
 |distinct_ratio|float|
 |uniqueness_flag|boolean (≈1.0 ratio)|
-
-> IDs, flags, and measures separate cleanly here.
-
 ---
-
 ## 4. Value Shape & Length (What do values look like?)
-
-Cheap but high signal.
 
 |Feature|Type|
 |---|---|
